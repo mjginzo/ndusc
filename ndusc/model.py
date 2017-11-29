@@ -1,22 +1,37 @@
-from pyomo.environ import *
+# -*- coding: utf-8 -*-
+"""Modulo con..."""
 
+import pyomo.environ as pyenv
 import logging as log
-
 import format_sol
 
+
 def load(file, function, data):
+    """Titulo.
+
+    Descripcion.
+
+    Args:
+        file (:obj:`str`): archivo...
+        ...
+
+    Return:
+
+    Example:
+        >>> load(asda, asd)
+            10.0
+    """
     exec(file)
     return eval("{}(data)".format(function))
 
 
 def solve(problem, solver='gurobi', duals=True):
-    """
-    """
+
     # Create a solver
-    opt = SolverFactory(solver)
+    opt = pyenv.SolverFactory(solver)
 
     # Get duals
-    problem.dual = Suffix(direction=Suffix.IMPORT)
+    problem.dual = pyenv.Suffix(direction=Suffix.IMPORT)
 
     # Create a model instance and optimize
     solver_results = opt.solve(problem)
@@ -30,5 +45,4 @@ def solve(problem, solver='gurobi', duals=True):
         results = None
     else:
         results = None
-
     return solver_results, results
