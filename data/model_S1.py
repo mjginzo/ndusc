@@ -7,35 +7,37 @@
 #
 # Imports
 #
+import pyomo.environ as pyenv
 
-from pyomo.environ import *
 
 def model_S1(data):
     #
     # Model
     #
 
-    model = ConcreteModel()
+    model = pyenv.ConcreteModel()
 
     #
     # Sets
     #
-
-    model.Resources = Set(initialize=data['sets']['Resources'])
+    model.Resources = pyenv.Set(initialize=data['sets']['Resources'])
 
     #
     # Parameters
     #
 
-    model.P = Param(model.Resources, 
-                    initialize=data['params']['P'], 
-                    within=PositiveReals)
+
+    model.P = pyenv.Param(model.Resources,
+                          initialize=data['params']['P'],
+                          within=pyenv.PositiveReals)
+
 
     #
     # Variables
     #
 
-    model.Z = Var(model.Resources, within=Binary)
+    model.Z = pyenv.Var(model.Resources, within=pyenv.Binary)
+
 
     #
     # Objective
@@ -43,8 +45,8 @@ def model_S1(data):
 
     def Obj_rule(model):
         return  + sum(model.P[i]*model.Z[i] for i in model.Resources)
-    
-    model.Obj = Objective(rule=Obj_rule, sense=minimize)
-    
-    return model
 
+    model.Obj = pyenv.Objective(rule=Obj_rule, sense=pyenv.minimize)
+
+
+    return model

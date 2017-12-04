@@ -9,9 +9,7 @@ class Ouput_module(Object):
 
     def plot_convergence_graph():
 
-    return
 
-//
     def plot_tree_graph():
 
     return
