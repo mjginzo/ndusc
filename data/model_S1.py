@@ -1,5 +1,4 @@
-"""First stage model.
-
+"""
 First stage model of the stochastic problem from the thesis of Lee.
 """
 #

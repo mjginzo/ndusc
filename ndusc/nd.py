@@ -1,131 +1,53 @@
-import tree
+from ndusc.tree import Tree
+from ndusc.model import StocasticModel
+from ndusc import cuts
 
 
-def nested_decomposition(tree,data):
+def nested_decomposition(tree_dic, data_dic):
     # INICIO METODO
     #
-    # Iterate over al nodes of each stage
-    #
-    tree_nc  = tree.Tree(tree)
+    verbosity = 1
+    if (verbosity):
+        print("\nINFO: STARTING ND ALGORTITHM\n")
 
-    nodes1 = tree_nc1.return_stage_nodes(1)
-    tree_nc1.return_previous_node(1)
+    iteration = 1
+    tree_nc = Tree(tree_dic, data_dic)
+    current_stage = tree_nc.get_first_stage()
+    stopcontion = False
 
+    while not stopcontion:
+        current_stage_nodes = tree_nc.return_stage_nodes(current_stage)
+        current_data_values = tree_nc.get_data_values()
 
+        if (verbosity):
+            print("* ITERATION: ", iteration)
+            print("  * CURRENT STAGE: ", current_stage)
+            print("  * NUMBER OF NODES IN THE LEVEL: ", len(current_stage_nodes))
+            print("  * CONTENT: ", current_stage_nodes)
+            print("")
 
-    stages = sorted(list(set(jmespath.search("nodes[*].stage", tree))))
+        for node in current_stage_nodes:
+            if (verbosity):
+                print("    * SOLVING NODE ID", tree_nc.return_node_id(node))
+            modeldata = StocasticModel(
+                        node.charge_node_in_data(node,
+                                                 current_data_values))
+            if (verbosity):
+                print("    * CREATING MODEL: ", modeldata.get_model_data())
+            problem = modeldata.load(node)
+            if (verbosity):
+                print("    * CREATING PROBLEM: ", problem)
+            if (verbosity):
+                print("    * CREATING CUTS")
+            cuts.create_cuts(modeldata.get_model_data(), node)
+            if (verbosity):
+                print("    * EXECUTING NLP SOLVER:")
+            sresults, presults = modeldata.solve(problem, 'gurobi', False)
+            print("ACABA")
+        iteration = iteration+1
+        next_stage = next_stage + 1
+        current_stage = tree_nc.get_stage_id(next_stage)
+        stopcontion = True
 
-    # dir = 1 # if 1 forward if -1 backward
-
-    # - while optimality conditions are not met
-    # while
-
-    # - for stage in stages:
-
-    # FIRST STAGE
-    stage = stages[0]
-
-    #### CAMBIA
-    stage_nodes = jmespath.search("nodes[?stage==`{}`]".format(stage), tree)
-
-    # -- for node in stage_nodes:
-
-    node = stage_nodes[0]
-
-    # Get node data
-    model_data = utilities.node_data(node, data)
-
-    # Create the problem
-    problem = model.load(node['model']['file'],
-                        node['model']['function'],
-                        model_data)
-
-
-    cuts.create_cuts(model, node)
-
-    # Solve the problem
-    solver_results, problem_results = model.solve(problem, 'gurobi', duals=False)
-
-    # update tree with new results
-    node.update(problem_results)
-
-    # SECOND STAGE
-    stage = stages[1]
-    stage_nodes = jmespath.search("nodes[?stage==`{}`]".format(stage), tree)
-
-    # -- for node in stage_nodes:
-
-    node = stage_nodes[0]
-
-    # update data with
-    model_data = utilities.node_data(node, data)
-
-    prev_id = node['prev_id']
-
-    ####
-    prev_vars = jmespath.search("nodes[?id==`{}`].variables".format(prev_id), tree)
-
-    # <------------
-    # Load solution of the previous node
-    if len(prev_vars) == 1:
-        prev_vars = prev_vars[0]
-    else:
-        print "Error more than one parent"
-
-    model_data['params'].update(prev_vars)
-    # <------------
-
-    problem = model.load(node['model']['file'],
-                        node['model']['function'],
-                        model_data)
-
-    solver_results, problem_results = model.solve(problem, 'gurobi', duals=False)
-
-
-
-
-    #
-    # Load Second Model
-    #
-    #
-    #model1 = model_S1(data, node)
-    #
-    #
-    #cuts = {
-    #            'sets':{
-    #                'Cuts_Opt':[],
-    #                'Cuts_Feas':[],
-    #            },
-    #            'params':{
-    #                'D':{},
-    #                'd':{},
-    #                'E':{},
-    #                'e':{}
-    #            }
-    #        }
-    #
-    #
-    ##
-    ## Create a solver
-    ##
-    #
-    #opt = SolverFactory('gurobi')
-    #
-    ### Create a model instance and optimize
-    #instance_S1 = model_S1.create_instance()
-    #results_S1 = opt.solve(instance_S1)
-    #instance_S1.load(results_S1)
-    #print results_S1
-    #
-    ## Iterate to eliminate the previously found solution
-    #results = {'variables':{}}
-    #for v in instance_S1.active_components(Var):
-    #    results['variables'][v.getname()] = {}
-    #    varobject = getattr(instance_S1, str(v))
-    #    for index in varobject:
-    #        results['variables'][v.getname()][index] = varobject[index].value
-    #
-
-
-
+    output = 1
     return output
