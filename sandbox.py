@@ -1,7 +1,5 @@
 %load_ext autoreload
 %autoreload 2
-import importlib
-importlib.reload(tree)
 #
 # Imports
 #
