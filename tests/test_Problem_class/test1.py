@@ -56,6 +56,11 @@ new_cut = cuts.get_cut('feas', 2)
 
 problem_nd.create_feas_cuts(new_cut)
 
-problem_nd.solve(duals=True)
+#import pyomo.environ as pyenv
+# Export integer data
+#problem_nd.priority = pyenv.Suffix(direction=pyenv.Suffix.EXPORT, datatype=pyenv.Suffix.INT)
 
-problem_nd._feas_cuts.pprint()
+results = problem_nd.solve(duals=True)
+
+#import pyomo.environ as pyenv
+#[c[i] for c in problem_nd.component_objects(pyenv.Constraint) for i in getattr(problem_nd, str(c))]

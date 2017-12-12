@@ -3,10 +3,11 @@
 
 # Packages
 import pyomo.environ as pyenv
+import logging as log
 
 
 # get_solution ----------------------------------------------------------------
-def get_solution(problem, solver_results, duals):
+def get_solution(problem, solver_results, duals, solver):
     """Get solution.
 
     Get solution of pyomo concrete model.
@@ -15,6 +16,7 @@ def get_solution(problem, solver_results, duals):
         problem ()
         solver_results
         duals
+        solver
 
     Return:
         :obj:`dict`:
@@ -30,7 +32,7 @@ def get_solution(problem, solver_results, duals):
 
     # Get constraints
     if duals:
-        results['constraints'] = get_constraints(problem)
+        results['constraints'] = get_constraints(problem, duals, solver)
 
     # Get solver information
     results['solver'] = get_solver_info(solver_results)
@@ -61,7 +63,7 @@ def get_variables(problem):
 
 
 # get_constraints -------------------------------------------------------------
-def get_constraints(problem):
+def get_constraints(problem, duals, solver):
     """Get constraints information.
 
     Args:
@@ -70,13 +72,100 @@ def get_constraints(problem):
     Return:
         :obj:`dict`:
     """
+    # fix_integer_vars --------------------------------------------------------
+    def fix_integer_vars(problem, fix=True):
+        """Fix or unfix integer variables.
+
+        Args:
+            problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+                pyomo.
+            fix (:obj:`str`, opt): if ``True`` fix integer variables. Defaults
+                to ``True``.
+        """
+        #integer = ['Binary', 'Integer']
+        for v in problem.component_objects(pyenv.Var, active=True):
+            vobject = getattr(problem, str(v))
+            for i in vobject:
+                if str(v[i].domain_type) in "IntegerSet":
+                    v[i].fixed = fix
+        problem.preprocess()
+    # ----------------------------------------------------------------------- #
+
+    # change_vars_domain ------------------------------------------------------
+    def change_vars_domain(problem, vars, new_domain):
+        """Relax or unrelax integer variables.
+
+        Args:
+            problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+                pyomo.
+            vars (:obj:`list`): list of variables of pyomo to change domain.
+            new_domain (:obj:`str`): domain to change desired variables.
+                Options: ``'RealSet'`` or ``'IntegerSet'``.
+        """
+        if new_domain == 'RealSet':
+            domain_type = pyenv.RealSet
+        elif new_domain == 'IntegerSet':
+            domain_type = pyenv.IntegerSet
+        else:
+            raise NameError("""Unknown domain_type = {}.
+                            Allowed options: "RealSet" or "IntegerSet"
+                            """.format(domain_type))
+        import pdb; pdb.set_trace()
+        for v in vars:
+            v.domain_type = domain_type
+        problem.preprocess()
+    # ----------------------------------------------------------------------- #
+
+    # integer_vars ------------------------------------------------------
+    def integer_vars(problem):
+        """Return integer variables.
+
+        Args:
+            problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+                pyomo.
+        Return:
+            :obj:`list`: list of variables of pyomo.
+
+        Todo: check all runs ok.
+        """
+        import pdb; pdb.set_trace()
+        vars = []
+        for v in problem.component_objects(pyenv.Var, active=True):
+            for i in getattr(problem, str(v)):
+                    if hasattr(v[i], 'domain_type'):
+                        if str(v[i].domain_type) == "IntegerSet":
+                            vars = vars + [v[i]]
+                    elif hasattr(v[i], 'domain'):
+                        if str(v[i].domain) in ["Integer", "Binary"]:
+                            vars = vars + [v[i]]
+        return vars
+    # ----------------------------------------------------------------------- #
+
+    # Get duals (of the relaxed problem)
+    if duals:
+        vars = integer_vars(problem)
+        change_vars_domain(problem, vars, new_domain)
+        if not hasattr(problem, 'dual'):
+            log.info('Removing dual attribute')
+            problem.del_component('dual')
+        problem.dual = pyenv.Suffix(direction=pyenv.Suffix.IMPORT)
+        opt = pyenv.SolverFactory(solver)
+        solver_results = opt.solve(problem)
+        change_vars_domain(problem, vars, domain_type)
+
+    # Solve proble to get dual variables
+    #
+    #
+
+    # Store dual variables
     results = {}
     for c in problem.component_objects(pyenv.Constraint, active=True):
         results[c.getname()] = {}
         cobject = getattr(problem, str(c))
         for index in cobject:
-            print(str(c)+'_'+str(index))
-            results[c.getname()][index]['dual'] = problem.dual.get(cobject[index])
+            results[c.getname()][index] = {'dual': problem.dual[cobject[index]]}
+
+    # Unfix integer variables
 
     return results
 # --------------------------------------------------------------------------- #

@@ -2,7 +2,6 @@
 """Modulo con..."""
 
 import pyomo.environ as pyenv
-# import format_sol
 
 # Package modules
 import ndusc.problem_nd.problem_functions as prob_func
@@ -58,13 +57,6 @@ class Problem(pyenv.ConcreteModel):
         Return:
             :obj:`dict`: results information.
         """
-        # Get duals
-        if duals:
-            if not hasattr(self, 'dual'):
-                print('Removing dual attribute')
-                #self.del_component('dual')
-                self.dual = pyenv.Suffix(direction=pyenv.Suffix.IMPORT)
-
         return prob_func.solve(self, solver, duals)
 
     def create_feas_cuts(self, feas_cuts):
