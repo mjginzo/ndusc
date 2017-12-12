@@ -36,7 +36,11 @@ class Tree(object):
         return list_nodes
 
     def get_stage_id(self, id):
-        return self.__stages[id]
+        return jmespath.search("[?id==`{}`].stage".format(id), self.__nodes)
+
+
+    def get_first_stage(self):
+        return jmespath.search("[?id==`{}`].stage".format(id), self.__nodes)
 
 
     def update_tree(tree, main_data, new_data, key):

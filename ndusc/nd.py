@@ -12,8 +12,7 @@ def nested_decomposition(tree_dic, data_dic):
 
     iteration = 1
     tree_nc = Tree(tree_dic, data_dic)
-    next_stage = 0
-    current_stage = tree_nc.get_stage_id(next_stage)
+    current_stage = tree_nc.get_first_stage()
     stopcontion = False
 
     while not stopcontion:
