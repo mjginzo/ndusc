@@ -1,11 +1,16 @@
+"""Setup file.
+
+File that allows to install the ndusc package.
+"""
 from setuptools import setup, find_packages
 
-# README.md file
-# ==============
+
+# readme ----------------------------------------------------------------------
 def readme():
+    """Load README.md file."""
     with open('README.md') as f:
         return f.read()
-
+# --------------------------------------------------------------------------- #
 
 # LICENSE file
 # ============
@@ -40,7 +45,7 @@ setup(
     author = '',
     author_email = '',
     description = description,
-    classifiers = ['Programming Language :: Python :: 2.7'],
+    classifiers = ['Programming Language :: Python :: 3.6'],
     long_description = readme(),
     packages = find_packages(),
     install_requires = requirements(),

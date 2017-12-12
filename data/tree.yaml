@@ -1,33 +1,34 @@
-nodes:
+
+:
   - id: 1
-    prev_id: 
+    prev_id:
     stage: 1
     probability: 1
-    model: 
+    model:
         file: data/model_S1.py
         function: model_S1
-    set: 
-    params: 
+    set:
+    params:
   - id: 2
     prev_id: 1
     stage: 2
     probability: 0.5
-    model: 
+    model:
         file: data/model_S2.py
         function: model_S2
-    set: 
+    set:
     params:
-        NVC: 
+        NVC:
             1: 70
-            2: 560 
-            3: 960 
+            2: 560
+            3: 960
             4: 1590
             5: 2030
             6: 2430
-        SP: 
-            1: 0.3 
-            2: 1 
-            3: 1.3 
+        SP:
+            1: 0.3
+            2: 1
+            3: 1.3
             4: 1.8
             5: 2
             6: 2.2
@@ -35,22 +36,22 @@ nodes:
     prev_id: 1
     stage: 2
     probability: 0.5
-    model: 
+    model:
         file: data/model_S2.py
         function: model_S2
-    set: 
+    set:
     params:
-        NVC: 
+        NVC:
             1: 80
-            2: 660 
-            3: 1060 
+            2: 660
+            3: 1060
             4: 1690
             5: 2130
             6: 2530
-        SP: 
-            1: 0.5 
-            2: 1.5 
-            3: 1.8 
+        SP:
+            1: 0.5
+            2: 1.5
+            3: 1.8
             4: 2.5
             5: 3
             6: 3.2

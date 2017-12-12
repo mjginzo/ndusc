@@ -1,4 +1,4 @@
-"""First stage model.
+"""
 First stage model of the stochastic problem from the thesis of Lee.
 """
 #
@@ -41,4 +41,4 @@ def model_S1(model, data):
         """."""
         return sum(model.P[i]*model.Z[i] for i in model.Resources)
 
-model.Obj = pyenv.Objective(rule=Obj_rule, sense=pyenv.minimize)
+    model.Obj = pyenv.Objective(rule=Obj_rule, sense=pyenv.minimize)
