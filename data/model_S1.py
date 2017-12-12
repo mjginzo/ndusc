@@ -1,6 +1,4 @@
-"""
-First stage model of the stochastic problem from the thesis of Lee.
-"""
+"""First stage model of the stochastic problem from the thesis of Lee."""
 #
 # Imports
 #
