@@ -1,7 +1,5 @@
 from ndusc.tree import Tree
-from ndusc.model import StocasticModel
-from ndusc import cuts
-
+from ndust.problem_nd.problem import Problem
 
 def nested_decomposition(tree_dic, data_dic):
     # INICIO METODO
@@ -16,33 +14,34 @@ def nested_decomposition(tree_dic, data_dic):
     stopcontion = False
 
     while not stopcontion:
-        current_stage_nodes = tree_nc.return_stage_nodes(current_stage)
-        current_data_values = tree_nc.get_data_values()
+        current_stage_nodes_id = tree_nc.get_stage_nodes_id(current_stage)
 
         if (verbosity):
             print("* ITERATION: ", iteration)
             print("  * CURRENT STAGE: ", current_stage)
-            print("  * NUMBER OF NODES IN THE LEVEL: ", len(current_stage_nodes))
-            print("  * CONTENT: ", current_stage_nodes)
+            print("  * NUMBER OF NODES IN THE LEVEL: ",
+                  len(current_stage_nodes_id))
+            print("  * CONTENT: ", current_stage_nodes_id)
             print("")
 
-        for node in current_stage_nodes:
+        for nodeid in current_stage_nodes_id:
             if (verbosity):
-                print("    * SOLVING NODE ID", tree_nc.return_node_id(node))
-            modeldata = StocasticModel(
-                        node.charge_node_in_data(node,
-                                                 current_data_values))
+                print("    * SOLVING NODE ID", nodeid)
+            problem_data = tree_nc.get_problem_data_by_idnode(nodeid)
             if (verbosity):
-                print("    * CREATING MODEL: ", modeldata.get_model_data())
-            problem = modeldata.load(node)
+                print("    * CREATING MODEL: ", problem_data)
+            problem = Problem()
+            problem.load_from_file(**problem_data)
+            import pdb; pdb.set_trace()
+
             if (verbosity):
                 print("    * CREATING PROBLEM: ", problem)
             if (verbosity):
                 print("    * CREATING CUTS")
-            cuts.create_cuts(modeldata.get_model_data(), node)
+            # cuts.create_cuts(modeldata.get_model_data(), node)
             if (verbosity):
                 print("    * EXECUTING NLP SOLVER:")
-            sresults, presults = modeldata.solve(problem, 'gurobi', False)
+            # sresults, presults = modeldata.solve(problem, 'gurobi', False)
             print("ACABA")
         iteration = iteration+1
         next_stage = next_stage + 1
