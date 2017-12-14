@@ -1,7 +1,22 @@
-from ndusc.tree import Tree
-from ndust.problem_nd.problem import Problem
+# -*- coding: utf-8 -*-
+"""Nested decomposition module."""
 
+# Package modules
+from ndusc.tree import Tree
+from ndusc.problem_nd.problem import Problem
+
+
+# nested_decomposition --------------------------------------------------------
 def nested_decomposition(tree_dic, data_dic):
+    """Nested decomposition algorithm.
+
+    Args:
+        tree_dic (:obj:`dict`): tree with node information.
+        data_dic (:obj:`dict`): general data.
+
+    Return:
+        :obj:`dict`: solution.
+    """
     # INICIO METODO
     #
     verbosity = 1
@@ -10,15 +25,15 @@ def nested_decomposition(tree_dic, data_dic):
 
     iteration = 1
     tree_nc = Tree(tree_dic, data_dic)
-    current_stage = tree_nc.get_first_stage()
+    stage = tree_nc.get_first_stage()
     stopcontion = False
 
     while not stopcontion:
-        current_stage_nodes_id = tree_nc.get_stage_nodes_id(current_stage)
+        current_stage_nodes_id = tree_nc.get_stage_nodes_id(stage)
 
         if (verbosity):
             print("* ITERATION: ", iteration)
-            print("  * CURRENT STAGE: ", current_stage)
+            print("  * CURRENT STAGE: ", stage)
             print("  * NUMBER OF NODES IN THE LEVEL: ",
                   len(current_stage_nodes_id))
             print("  * CONTENT: ", current_stage_nodes_id)
@@ -32,7 +47,6 @@ def nested_decomposition(tree_dic, data_dic):
                 print("    * CREATING MODEL: ", problem_data)
             problem = Problem()
             problem.load_from_file(**problem_data)
-            import pdb; pdb.set_trace()
 
             if (verbosity):
                 print("    * CREATING PROBLEM: ", problem)
@@ -44,9 +58,9 @@ def nested_decomposition(tree_dic, data_dic):
             # sresults, presults = modeldata.solve(problem, 'gurobi', False)
             print("ACABA")
         iteration = iteration+1
-        next_stage = next_stage + 1
-        current_stage = tree_nc.get_stage_id(next_stage)
+        stage = stage + 1
         stopcontion = True
 
     output = 1
     return output
+# --------------------------------------------------------------------------- #
