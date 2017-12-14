@@ -29,34 +29,38 @@ def nested_decomposition(tree_dic, data_dic):
     stopcontion = False
 
     while not stopcontion:
-        current_stage_nodes_id = tree_nc.get_stage_nodes_id(stage)
+        nodes_id = tree_nc.get_nodes_info(stage=stage, keys='id')
 
         if (verbosity):
             print("* ITERATION: ", iteration)
             print("  * CURRENT STAGE: ", stage)
-            print("  * NUMBER OF NODES IN THE LEVEL: ",
-                  len(current_stage_nodes_id))
-            print("  * CONTENT: ", current_stage_nodes_id)
+            print("  * NUMBER OF NODES IN THE LEVEL: ", len(nodes_id))
             print("")
 
-        for nodeid in current_stage_nodes_id:
-            if (verbosity):
-                print("    * SOLVING NODE ID", nodeid)
-            problem_data = tree_nc.get_problem_data_by_idnode(nodeid)
-            if (verbosity):
-                print("    * CREATING MODEL: ", problem_data)
-            problem = Problem()
-            problem.load_from_file(**problem_data)
-
-            if (verbosity):
-                print("    * CREATING PROBLEM: ", problem)
+        for node_id in nodes_id:
+            # --------------------
+            # Create cuts
+            # --------------------
             if (verbosity):
                 print("    * CREATING CUTS")
             # cuts.create_cuts(modeldata.get_model_data(), node)
+
+            # --------------------
+            # Loading node
+            # --------------------
             if (verbosity):
-                print("    * EXECUTING NLP SOLVER:")
+                print("    * LOADING NODE ID", node_id)
+            problem_info = tree_nc.get_node_problem_info(node_id)
+            problem = Problem()
+            problem.load_from_file(**problem_info)
+
+            # --------------------
+            # Solving node
+            # --------------------
+            if (verbosity):
+                print("    * EXECUTING PROBLEM")
             # sresults, presults = modeldata.solve(problem, 'gurobi', False)
-            print("ACABA")
+
         iteration = iteration+1
         stage = stage + 1
         stopcontion = True

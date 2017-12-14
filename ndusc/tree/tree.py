@@ -118,6 +118,27 @@ class Tree(object):
         n = self.get_nodes_info(id=id, keys='prev_id')
         if len(n) == 1:
             return n[0]
+        if len(n) == 0:
+            return None
+        else:
+            raise ValueError("More than one previous node.")
+    # ----------------------------------------------------------------------- #
+
+    # get_node_id -------------------------------------------------- #
+    def get_node_id(self, id):
+        """Retrun node id.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`ndusc.node.node.Node`: node.
+        """
+        n = self.get_nodes(id=id)
+        if len(n) == 1:
+            return n[0]
+        if len(n) == 0:
+            raise ValueError("No node id.")
         else:
             raise ValueError("More than one previous node.")
     # ----------------------------------------------------------------------- #
@@ -137,7 +158,7 @@ class Tree(object):
             :obj:`dict`: problem data.
         """
         return _utilities.join_data(self.__data_values,
-                                    self.get_node_id(id),
+                                    self.get_node_id(id=id),
                                     ['params', 'sets'])
     # ----------------------------------------------------------------------- #
 
@@ -151,10 +172,9 @@ class Tree(object):
         Return:
             :obj:`dict`: problem information.
         """
-        problem_info = self.get_nodes_info(id=id, keys=['file', 'function'])
-
+        problem_info = self.get_nodes_info(id=id, keys=['model'])
         if len(problem_info) == 1:
-            problem_info = problem_info[0]
+            problem_info = problem_info[0]['model']
             problem_info['data'] = self.get_node_data(id)
             return problem_info
         elif len(problem_info) == 0:
