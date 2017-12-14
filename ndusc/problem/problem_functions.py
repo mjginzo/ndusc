@@ -66,7 +66,7 @@ def solve(problem, solver='gurobi', duals=True):
     if status == 'optimal':
         results = _format_sol.get_solution(problem, solver_results,
                                            duals, solver)
-        return solver_results, results
+        return results
     else:
         raise ValueError('Infeasible Problem.')
 # --------------------------------------------------------------------------- #

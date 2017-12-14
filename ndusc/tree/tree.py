@@ -8,6 +8,7 @@ import jmespath as _jmp
 import ndusc.node.node as _node
 import ndusc.tree.search as _search
 import ndusc.utilities as _utilities
+import ndusc.error.error as _error
 
 
 # Tree ------------------------------------------------------------------------
@@ -23,8 +24,10 @@ class Tree(object):
             data_dic (:obj:`dict`): general data.
 
         Example:
-            >>> from ndusc.examples.tree import tree_example
-            >>> tree = tree_example()
+            >>> from ndusc.examples import input_module
+            >>> from ndusc.tree.tree import Tree
+            >>> data = input_module.input_module_example()
+            >>> tree = Tree(data.load_tree(), data.load_data())
         """
         self.__nodes = [_node.Node(n) for n in tree_dic['nodes']]
         self.__stages = sorted(list(set(_jmp.search("[*].stage",
@@ -38,7 +41,7 @@ class Tree(object):
 
     # get_stages --------------------------------------------------------------
     def get_stages(self):
-        """Get stages.
+        """Get stages attribute.
 
         Return:
             :obj:`list`: stages ids.
@@ -115,18 +118,21 @@ class Tree(object):
         Return:
             :obj:`ndusc.node.node.Node`: previous node.
         """
-        n = self.get_nodes_info(id=id, keys='prev_id')
-        if len(n) == 1:
-            return n[0]
-        if len(n) == 0:
-            return None
+        if self.exist_node(id):
+            n = self.get_nodes_info(id=id, keys='prev_id')
+            if len(n) == 1:
+                return n[0]
+            if len(n) == 0:
+                return None
+            else:
+                raise ValueError("More than one previous node.")
         else:
-            raise ValueError("More than one previous node.")
+            raise ValueError("Node id {} not exists".format(id))
     # ----------------------------------------------------------------------- #
 
-    # get_node_id -------------------------------------------------- #
-    def get_node_id(self, id):
-        """Retrun node id.
+    # get_node ----------------------------------------------------------------
+    def get_node(self, id):
+        """Retrun node object.
 
         Args:
             id (:obj:`str` or :obj:`int`): node id.
@@ -140,7 +146,26 @@ class Tree(object):
         if len(n) == 0:
             raise ValueError("No node id.")
         else:
-            raise ValueError("More than one previous node.")
+            raise ValueError(_error.node_duplicity)
+    # ----------------------------------------------------------------------- #
+
+    # exist_node --------------------------------------------------------------
+    def exist_node(self, id):
+        """Check if node exists.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`bool`: ``True`` if node id exists.
+        """
+        n = self.get_nodes(id=id)
+        if len(n) == 1:
+            return True
+        if len(n) == 0:
+            return False
+        else:
+            raise ValueError("Duplicity node id.")
     # ----------------------------------------------------------------------- #
 
     # ================
@@ -158,7 +183,7 @@ class Tree(object):
             :obj:`dict`: problem data.
         """
         return _utilities.join_data(self.__data_values,
-                                    self.get_node_id(id=id),
+                                    self.get_node(id=id),
                                     ['params', 'sets'])
     # ----------------------------------------------------------------------- #
 

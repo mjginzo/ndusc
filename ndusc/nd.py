@@ -2,17 +2,18 @@
 """Nested decomposition module."""
 
 # Package modules
-from ndusc.tree.tree import Tree
-from ndusc.problem.problem import Problem
+import ndusc.tree.tree as _tree
+import ndusc.problem.problem as _problem
 
 
 # nested_decomposition --------------------------------------------------------
-def nested_decomposition(tree_dic, data_dic):
+def nested_decomposition(tree_dic, data_dic, solver='gurobi'):
     """Nested decomposition algorithm.
 
     Args:
         tree_dic (:obj:`dict`): tree with node information.
         data_dic (:obj:`dict`): general data.
+        solver (:obj:`str`, opt): solver name. Defaults to ``'gurobi'``.
 
     Return:
         :obj:`dict`: solution.
@@ -24,7 +25,7 @@ def nested_decomposition(tree_dic, data_dic):
         print("\nINFO: STARTING ND ALGORTITHM\n")
 
     iteration = 1
-    tree_nc = Tree(tree_dic, data_dic)
+    tree_nc = _tree.Tree(tree_dic, data_dic)
     stage = tree_nc.get_first_stage()
     stopcontion = False
 
@@ -43,6 +44,7 @@ def nested_decomposition(tree_dic, data_dic):
             # --------------------
             if (verbosity):
                 print("    * CREATING CUTS")
+
             # cuts.create_cuts(modeldata.get_model_data(), node)
 
             # --------------------
@@ -51,9 +53,11 @@ def nested_decomposition(tree_dic, data_dic):
             if (verbosity):
                 print("    * LOADING NODE ID", node_id)
             problem_info = tree_nc.get_node_problem_info(node_id)
-            problem = Problem()
+            problem = _problem.Problem()
             problem.load_from_file(**problem_info)
-
+            # si nodo root entonces dual=False
+            dual = False
+            results = problem.solve(solver, dual)
             # --------------------
             # Solving node
             # --------------------
