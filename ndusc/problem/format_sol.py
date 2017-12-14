@@ -13,8 +13,8 @@ def get_solution(problem, solver_results, duals, solver):
     Get solution of pyomo concrete model.
 
     Args:
-        problem ()
-        solver_results
+        problem (:obj:`ndusc.problem.problem.Problem`): mathematical problem.
+        solver_results (:obj:`dict`): solver result.
         duals
         solver
 

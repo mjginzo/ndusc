@@ -2,7 +2,6 @@
 """Module to create feasibility and optimality cuts."""
 
 # Packages
-import logging as log
 import pyomo.environ as pyenv
 
 
