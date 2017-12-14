@@ -1,5 +1,8 @@
 
-def update_data(main_data, new_data, keys):
+import jmespath
+
+
+def join_data(main_data, new_data, keys):
     """Update main_data with information of new_data the keys.
 
     Args:
@@ -20,4 +23,4 @@ def update_data(main_data, new_data, keys):
                 else:
                     data[key] = new_data[key]
 
-    return(data)
+    return data

@@ -2,11 +2,12 @@
 """Functionalities for Model class."""
 
 # packages
-import pyomo.environ as pyenv
-import logging as log
+import pyomo.environ as _pyenv
+import logging as _log
 
 # package modules
-import ndusc.problem_nd.format_sol as format_sol
+from ndusc.problem import format_sol as _format_sol
+from ndusc.problem import integer_utils as _integer_utils
 
 
 # load_from_file --------------------------------------------------------------
@@ -45,42 +46,27 @@ def solve(problem, solver='gurobi', duals=True):
         :obj:`dict`: results information.
     """
     # Create a solver
-    opt = pyenv.SolverFactory(solver)
+    opt = _pyenv.SolverFactory(solver)
+
+    if duals:
+        int_vars = _integer_utils.get_integer_vars(problem)
+        if len(int_vars) == 0:
+            if not hasattr(problem, 'dual'):
+                problem.del_component('dual')
+            problem.dual = _pyenv.Suffix(direction=_pyenv.Suffix.IMPORT)
+        else:
+            raise ValueError('Integer problem has not dual information.')
 
     # Create a model instance and optimize
     solver_results = opt.solve(problem)
 
     # Obtain results
     status = str(solver_results['Solver'][0]['Termination condition'])
-    log.info('Status: ' + status)
+    _log.info('Status: ' + status)
     if status == 'optimal':
-        results = format_sol.get_solution(problem, solver_results,
-                                          duals, solver)
+        results = _format_sol.get_solution(problem, solver_results,
+                                           duals, solver)
         return solver_results, results
     else:
         raise ValueError('Infeasible Problem.')
-# --------------------------------------------------------------------------- #
-
-
-# solve_problem ---------------------------------------------------------------
-def solve_problem(problem, solver='gurobi'):
-    """Solve a problem.
-
-    Solve a given problem.
-
-    Args:
-        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of pyomo.
-        solver (:obj:`str`, opt): solver name. The disered solver must be in
-            the path. Defaults to ``'gurobi'``.
-
-    Return:
-        :obj:`tuple`: solver information and problem with result information.
-    """
-    # Create a solver
-    opt = pyenv.SolverFactory(solver)
-
-    # Create a model instance and optimize
-    solver_results = opt.solve(problem)
-
-    return solver_results, problem
 # --------------------------------------------------------------------------- #

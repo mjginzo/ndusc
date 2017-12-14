@@ -1,27 +1,32 @@
 # -*- coding: utf-8 -*-
-"""Modulo con..."""
+"""Problem class module."""
 
-import pyomo.environ as pyenv
+# Python packages
+import pyomo.environ as _pyenv
 
 # Package modules
-import ndusc.problem_nd.problem_functions as prob_func
-import ndusc.problem_nd.cuts as cuts
+from ndusc.problem import problem_functions as _prob_func
+from ndusc.problem import cuts as _cuts
 
 
-class Problem(pyenv.ConcreteModel):
+# Problem ---------------------------------------------------------------------
+class Problem(_pyenv.ConcreteModel):
     """Problem class.
 
-    Problem class is a ConcreteModel class but adding utilities for ndusc
+    Problem class is a ConcreteModel class but adding utilities for the ndusc
     algorithm.
     """
 
+    # __init__ ----------------------------------------------------------------
     def __init__(self):
         """Initialize as ConcreteModel.
 
         Initialize the object as pyomo.environ.ConcreteModel.
         """
         super(Problem, self).__init__()
+    # ----------------------------------------------------------------------- #
 
+    # load_from_file ----------------------------------------------------------
     def load_from_file(self, file, function, data):
         """Load ConcreteModel from file.
 
@@ -33,16 +38,20 @@ class Problem(pyenv.ConcreteModel):
             function (:obj:`str`): model function name.
             data (:obj:`dict`): dictionary with model data information.
         """
-        prob_func.load_from_file(self, file, function, data)
+        _prob_func.load_from_file(self, file, function, data)
+    # ----------------------------------------------------------------------- #
 
+    # update_cuts -------------------------------------------------------------
     def update_cuts(self, node):
         """Update feasibility and optimality cuts.
 
         Args:
             node (:obj:`ndusc.node.Node`): tree node.
         """
-        cuts.update_cuts(self, node)
+        _cuts.update_cuts(self, node)
+    # ----------------------------------------------------------------------- #
 
+    # solve -------------------------------------------------------------------
     def solve(self, solver='gurobi', duals=True):
         """Solve.
 
@@ -57,8 +66,10 @@ class Problem(pyenv.ConcreteModel):
         Return:
             :obj:`dict`: results information.
         """
-        return prob_func.solve(self, solver, duals)
+        return _prob_func.solve(self, solver, duals)
+    # ----------------------------------------------------------------------- #
 
+    # create_feas_cuts --------------------------------------------------------
     def create_feas_cuts(self, feas_cuts):
         """Create feasibility cuts.
 
@@ -66,14 +77,18 @@ class Problem(pyenv.ConcreteModel):
             feas_cuts (:obj:`dict`): feasibility cuts of the current node.
         """
         if hasattr(self, '_feas_cuts'):
-            cuts.update_feas_cuts(self, feas_cuts)
+            _cuts.update_feas_cuts(self, feas_cuts)
         else:
-            cuts.create_feas_cuts(self, feas_cuts)
+            _cuts.create_feas_cuts(self, feas_cuts)
+    # ----------------------------------------------------------------------- #
 
+    # create_opt_cuts ---------------------------------------------------------
     def create_opt_cuts(self, opt_cuts):
         """Create optimality cuts.
 
         Args:
             opt_cuts (:obj:`dict`): optimality cuts of the current node.
         """
-        cuts.create_opt_cuts(self, opt_cuts)
+        _cuts.create_opt_cuts(self, opt_cuts)
+    # ----------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #

@@ -1,109 +1,165 @@
-import jmespath
-from ndusc.node import Node
-import ndusc.utilities as utilities
+# -*- coding: utf-8 -*-
+"""Tree class module."""
 
+# Python package
+import jmespath as _jmp
+
+# Package modules
+import ndusc.node.node as _node
+import ndusc.tree.search as _search
+import ndusc.utilities as _utilities
+
+
+# Tree ------------------------------------------------------------------------
 class Tree(object):
-    """
+    """Tree class."""
 
-    """
-    def __init__(self, data_tree, data_values):
-        self.__nodes = [Node(n) for n in data_tree['nodes']]
-        self.__stages = sorted(list(set(jmespath.search("[*].stage",
-                                                        self.__nodes))))
-        self.__data_values = data_values
+    # __init__ ----------------------------------------------------------------
+    def __init__(self, tree_dic, data_dic):
+        """Initialization.
 
+        Args:
+            tree_dic (:obj:`dict`): tree with node information.
+            data_dic (:obj:`dict`): general data.
 
+        Example:
+            >>> from ndusc.examples.tree import tree_example
+            >>> tree = tree_example()
+        """
+        self.__nodes = [_node.Node(n) for n in tree_dic['nodes']]
+        self.__stages = sorted(list(set(_jmp.search("[*].stage",
+                                        self.__nodes))))
+        self.__data_values = data_dic
+    # ----------------------------------------------------------------------- #
+
+    # ================
+    # STAGES INFO
+    # ================
+
+    # get_stages --------------------------------------------------------------
     def get_stages(self):
+        """Get stages.
+
+        Return:
+            :obj:`list`: stages ids.
+        """
         return self.__stages
+    # ----------------------------------------------------------------------- #
 
-
-    def get_nodes(self):
-        return self.__nodes
-
-
-    def get_stage_nodes(self, stageid):
-
-        nodes_dic = jmespath.search("[?stage==`{}`]".format(stageid),
-                                    self.__nodes)
-        return [Node(node_dic) for node_dic in nodes_dic]
-
-    def get_stage_nodes_id(self, stageid):
-        return jmespath.search("[?stage==`{}`].id".format(stageid),
-                                        self.__nodes)
-
-    def get_stage_id(self, id):
-        return jmespath.search("[?id==`{}`].stage".format(id), self.__nodes)
-
-
+    # get_first_stage ------------------------------------------------------- #
     def get_first_stage(self):
-        s = jmespath.search("[?prev_id==None].stage".format(id), self.__nodes)
+        """Get first stage."""
+        s = self.get_nodes_info(prev_id=None, keys='stage')
         if len(s) == 1:
             return s[0]
         else:
             raise ValueError("More than one node in the first stage.")
+    # ----------------------------------------------------------------------- #
 
+    # ================
+    # NODES INFO
+    # ================
 
-    def update_tree(tree, main_data, new_data, key):
-        """Update main_data[key] with information of new_data[key].
+    # get_nodes ---------------------------------------------------------------
+    def get_nodes(self, **args):
+        """Get nodes.
 
+        Args:
+            **args: keys and values to search nodes.
+
+        Return:
+            :obj:`list`: list of nodes.
+
+        Example:
+            >>> tree.get_nodes(id=[1, 2], stage=2)
+                [{'id': 2,
+                'model': {'file': 'data/model_S2.py', 'function': 'model_S2'},
+                'params': [{'demand': 1}],
+                'prev_id': 1,
+                'probability': 0.5,
+                'set': None,
+                'stage': 2}]
         """
+        return _search.get_nodes(self.__nodes, args)
+    # ----------------------------------------------------------------------- #
 
-        data = dict(main_data)
+    # get_nodes_info -------------------------------------------------------- #
+    def get_nodes_info(self, keys=None, **args):
+        """Get nodes.
 
-        if key in new_data.keys():
-            if new_data[key]:
-                if key in data.keys():
-                    data[key].update(new_data[key])
-                else:
-                    data[key] = new_data[key]
+        Args:
+            keys (:obj:`list`): list of keys.
+            **args: keys and values to search nodes.
 
-        return data
+        Return:
+            :obj:`list`: nodes information.
 
+        Example:
+            >>> tree.get_nodes_info(keys='stage', id=2)
+                [2]
+        """
+        nodes = self.get_nodes(**args)
+        return _search.get_key_values(nodes, keys)
+    # ----------------------------------------------------------------------- #
 
-    def get_previous_node(self, previd):
+    # Specific functions
+    # ================
+
+    # get_previous_node_id -------------------------------------------------- #
+    def get_previous_node_id(self, id):
         """Retrun previous node id.
 
-        Todo:
-            Exception unique parent node
-        """
-        return jmespath.search("[?id==`{}`].prev_id".format(previd),
-                               self.__nodes)
-
-
-    # get_data_by_idnode ------------------------------------------------------
-    def get_data_by_idnode(self, idnode):
-        """Get data information from the node.
-
         Args:
-            idnode (:obj:`str` or :obj:`int`): node id.
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`ndusc.node.node.Node`: previous node.
         """
-        return utilities.update_data(self.__data_values,
-                                     self.get_node_id(idnode),
-                                     ['params', 'sets'])
-    # ----------------------------------------------------------------------- #
-
-    # get_problem_data_by_idnode ----------------------------------------------
-    def get_problem_data_by_idnode(self, idnode):
-        """Get data information from the node.
-
-        Args:
-            idnode (:obj:`str` or :obj:`int`): node id.
-        """
-        node = self.get_node_id(idnode)
-        return {'data': utilities.update_data(self.__data_values,
-                                              node,
-                                              ['params', 'sets']),
-                'file': node.get_file(),
-                'function': node.get_function()
-                }
-    # ----------------------------------------------------------------------- #
-
-
-    def get_node_id(self, idnode):
-        """."""
-        node = jmespath.search("[?id == `{}`]".format(idnode),
-                               self.__nodes)
-        if len(node) == 1:
-            return Node(node[0])
+        n = self.get_nodes_info(id=id, keys='prev_id')
+        if len(n) == 1:
+            return n[0]
         else:
-            raise ValueError("Duplicated node id.")
+            raise ValueError("More than one previous node.")
+    # ----------------------------------------------------------------------- #
+
+    # ================
+    # PROBLEM INFO
+    # ================
+
+    # get_node_data ------------------------------------------------------
+    def get_node_data(self, id):
+        """Get data information from the node.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`dict`: problem data.
+        """
+        return _utilities.join_data(self.__data_values,
+                                    self.get_node_id(id),
+                                    ['params', 'sets'])
+    # ----------------------------------------------------------------------- #
+
+    # get_node_problem_info ---------------------------------------------------
+    def get_node_problem_info(self, id):
+        """Get problem information from the node.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`dict`: problem information.
+        """
+        problem_info = self.get_nodes_info(id=id, keys=['file', 'function'])
+
+        if len(problem_info) == 1:
+            problem_info = problem_info[0]
+            problem_info['data'] = self.get_node_data(id)
+            return problem_info
+        elif len(problem_info) == 0:
+            raise ValueError("Unknown node id {}.".format(id))
+        else:
+            raise ValueError("Duplicated node id {}.".format(id))
+    # ----------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #

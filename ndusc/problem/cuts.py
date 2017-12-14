@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Module to create feasibility and optimality cuts."""
+"""Module to create feasibility and optimality cuts.
+
+Todo: Create cut functions for LP problems and MILP problems.
+"""
 
 # Packages
-import pyomo.environ as pyenv
+import pyomo.environ as _pyenv
 
 
 # update_cuts -----------------------------------------------------------------
@@ -33,28 +36,28 @@ def create_feas_cuts(problem, feas_cuts):
     Todo: ¿What happends when a variable has not index?
     """
     # Sets
-    problem._Cuts_Feas = pyenv.Set(initialize=feas_cuts['sets']['id'])
-    problem._Vars = pyenv.Set(initialize=feas_cuts['sets']['vars'])
+    problem._Cuts_Feas = _pyenv.Set(initialize=feas_cuts['sets']['id'])
+    problem._Vars = _pyenv.Set(initialize=feas_cuts['sets']['vars'])
 
     # Parameters
-    problem._D = pyenv.Param(problem._Cuts_Feas, problem._Vars,
-                             initialize=feas_cuts['params']['D'],
-                             mutable=True)
-    problem._d = pyenv.Param(problem._Cuts_Feas,
-                             initialize=feas_cuts['params']['d'],
-                             mutable=True)
+    problem._D = _pyenv.Param(problem._Cuts_Feas, problem._Vars,
+                              initialize=feas_cuts['params']['D'],
+                              mutable=True)
+    problem._d = _pyenv.Param(problem._Cuts_Feas,
+                              initialize=feas_cuts['params']['d'],
+                              mutable=True)
 
     # Constraints
     def _feas_cuts_rule(problem, l):
         return sum([problem._D[l, (str(v), i)] *
                     getattr(problem, str(v))[i]
-                    for v in problem.component_objects(pyenv.Var, active=True)
+                    for v in problem.component_objects(_pyenv.Var, active=True)
                     if str(v) != 'Aux_Obj'
                     for i in v.index_set()
                     ]) >= problem._d[l]
 
-    problem._feas_cuts = pyenv.Constraint(problem._Cuts_Feas,
-                                          rule=_feas_cuts_rule)
+    problem._feas_cuts = _pyenv.Constraint(problem._Cuts_Feas,
+                                           rule=_feas_cuts_rule)
 # --------------------------------------------------------------------------- #
 
 
@@ -96,26 +99,26 @@ def create_opt_cuts(problem, opt_cuts):
     Todo: Check if current optimality constraints exists.
     """
     # Sets
-    problem._Cuts_Opt = pyenv.Set(initialize=opt_cuts['sets']['cuts'])
+    problem._Cuts_Opt = _pyenv.Set(initialize=opt_cuts['sets']['cuts'])
 
     # Variables
-    problem.Aux_Obj = pyenv.Var()
+    problem.Aux_Obj = _pyenv.Var()
 
     # Objective
-    for o in problem.component_objects(pyenv.Objective, active=True):
+    for o in problem.component_objects(_pyenv.Objective, active=True):
         if o.active:
-            problem._Obj = pyenv.Objective(rule=o.rule+problem.Aux_Obj)
+            problem._Obj = _pyenv.Objective(rule=o.rule+problem.Aux_Obj)
             o.deactivate()
 
     # Constraints
     def _opt_cuts_rule(problem, l):
         return sum([opt_cuts['params']['E'][l][str(v)][i] *
                     getattr(problem, str(v))[i]
-                    for v in problem.component_objects(pyenv.Var, active=True)
+                    for v in problem.component_objects(_pyenv.Var, active=True)
                     if str(v) != 'Aux_Obj'
                     for i in v.index_set()
                     ]) >= opt_cuts['params']['e'][l]
 
-    problem._opt_cuts = pyenv.Constraint(problem._Cuts_Opt,
-                                         rule=_opt_cuts_rule)
+    problem._opt_cuts = _pyenv.Constraint(problem._Cuts_Opt,
+                                          rule=_opt_cuts_rule)
 # --------------------------------------------------------------------------- #

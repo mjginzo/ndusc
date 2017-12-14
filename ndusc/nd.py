@@ -2,8 +2,8 @@
 """Nested decomposition module."""
 
 # Package modules
-from ndusc.tree import Tree
-from ndusc.problem_nd.problem import Problem
+from ndusc.tree.tree import Tree
+from ndusc.problem.problem import Problem
 
 
 # nested_decomposition --------------------------------------------------------
