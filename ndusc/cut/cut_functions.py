@@ -6,37 +6,50 @@ Todo: Could be tree methods?
 """
 
 
-# compute_feas_cuts -----------------------------------------------------------
-def compute_feas_cuts(cuts, node, child_nodes):
+# compute_feas_cut ------------------------------------------------------------
+def compute_feas_cut(duals, T_matrix, rhs):
     """Compute feasibility cuts parameters.
 
     Args:
-        node (:obj:`int` or `str`): node id.
+        nodes (:obj:`int` or `str`): node id.
         tree (:obj:`Tree`): tree.
     """
-    return cuts
+    # D =
+    return duals
 # --------------------------------------------------------------------------- #
 
 
-# compute_opt_cuts ------------------------------------------------------------
-def compute_opt_cuts(cuts, node, child_nodes):
+# compute_opt_cut -------------------------------------------------------------
+def compute_opt_cut(duals):
     """Compute optimality cuts parameters.
 
     Args:
         node (:obj:`int` or `str`): node id.
         tree (:obj:`Tree`): tree.
     """
-    return cuts
+    return duals
 # --------------------------------------------------------------------------- #
 
 
-# compute_int_cuts ------------------------------------------------------------
-def compute_int_cuts(cuts, node, child_nodes):
-    """Compute optimality cuts parameters.
+# compute_int_feas_cut --------------------------------------------------------
+def compute_int_feas_cut(duals):
+    """Compute integer feasibility cuts parameters.
 
     Args:
         node (:obj:`int` or `str`): node id.
         tree (:obj:`Tree`): tree.
     """
-    return cuts
+    return duals
+# --------------------------------------------------------------------------- #
+
+
+# compute_int_opt_cut --------------------------------------------------------
+def compute_int_opt_cut(duals):
+    """Compute integer optimality cuts parameters.
+
+    Args:
+        node (:obj:`int` or `str`): node id.
+        tree (:obj:`Tree`): tree.
+    """
+    return duals
 # --------------------------------------------------------------------------- #

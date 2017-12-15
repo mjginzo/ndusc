@@ -6,6 +6,13 @@
 # Trees
 # -----------------------
 
+# no_root_node ----------------------------------------------------------------
+def no_root_node():
+    """Error message when no nodes with prev_id == None."""
+    raise ValueError("No root node.")
+# --------------------------------------------------------------------------- #
+
+
 # multiple_root_node ----------------------------------------------------------
 def multiple_root_node():
     """Error message when multiple root nodes."""

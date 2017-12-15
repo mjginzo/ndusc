@@ -9,6 +9,7 @@ import ndusc.node.node as _node
 import ndusc.tree.search as _search
 import ndusc.utilities as _utilities
 import ndusc.error.error as _error
+import ndusc.problem.problem as _problem
 
 
 # Tree ------------------------------------------------------------------------
@@ -33,6 +34,7 @@ class Tree(object):
         self.__stages = sorted(list(set(_jmp.search("[*].stage",
                                         self.__nodes))))
         self.__general_data = data_dic
+        self._add_constraints_info()
     # ----------------------------------------------------------------------- #
 
     # ================
@@ -69,8 +71,22 @@ class Tree(object):
         s = self.get_nodes_info(prev_id=None, keys='stage')
         if len(s) == 1:
             return s[0]
-        else:
+        elif len(s) > 1:
             _error.multiple_root_node()
+        else:
+            _error.no_root_node()
+    # ----------------------------------------------------------------------- #
+
+    # get_last_stage ------------------------------------------------------- #
+    def get_last_stage(self):
+        """Get last stage."""
+        prev_node = self.get_nodes_id()[-1]
+        while prev_node:
+            new_node = self.get_next_node_id(prev_node)
+            if new_node:
+                prev_node = new_node
+            else:
+                return self.get_nodes_info(id=prev_node, keys='stage')
     # ----------------------------------------------------------------------- #
 
     # ================
@@ -132,15 +148,25 @@ class Tree(object):
     # Specific functions
     # ================
 
-    # get_previous_node_id -------------------------------------------------- #
+    # get_nodes_id -------------------------------------------------- #
+    def get_nodes_id(self):
+        """Return nodes id.
+
+        Return:
+            :obj:`list`: list of nodes id.
+        """
+        return self.get_nodes_info(keys='id')
+    # ----------------------------------------------------------------------- #
+
+    # get_previous_node_id ----------------------------------------------------
     def get_previous_node_id(self, id):
-        """Retrun previous node id.
+        """Return previous node id.
 
         Args:
             id (:obj:`str` or :obj:`int`): node id.
 
         Return:
-            :obj:`ndusc.node.node.Node`: previous node.
+            :obj:`str` or :obj:`int`: previous node id.
         """
         if self.exist_node(id):
             n = self.get_nodes_info(id=id, keys='prev_id')
@@ -154,17 +180,38 @@ class Tree(object):
             _error.no_node_id(id)
     # ----------------------------------------------------------------------- #
 
-    # get_node ----------------------------------------------------------------
-    def get_node(self, id):
-        """Retrun node object.
+    # get_next_node_id --------------------------------------------------------
+    def get_next_node_id(self, id):
+        """Return next node id.
 
         Args:
             id (:obj:`str` or :obj:`int`): node id.
 
         Return:
+            :obj:`str` or :obj:`int`: next node id.
+        """
+        if self.exist_node(id):
+            return self.get_nodes_info(prev_id=id, keys='id')
+        else:
+            _error.no_node_id(id)
+    # ----------------------------------------------------------------------- #
+
+    # get_node ----------------------------------------------------------------
+    def get_node(self, id, copy=True):
+        """Retrun node object.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+            copy (:obj:`bool`, opt): If ``True`` return a copy of the node
+                object.
+
+        Return:
             :obj:`ndusc.node.node.Node`: node.
         """
-        n = self.get_nodes(id=id)
+        if copy is True:
+            n = self.get_nodes(id=id)
+        else:
+            n = [node for node in self.__nodes if node['id'] == id]
         if len(n) == 1:
             return n[0]
         if len(n) == 0:
@@ -190,6 +237,34 @@ class Tree(object):
             return False
         else:
             _error.mutiple_ids(id)
+    # ----------------------------------------------------------------------- #
+
+    # first_stage_node_id -----------------------------------------------------
+    def first_stage_node_id(self):
+        """Return list of first stage nodes id.
+
+        Return:
+            :obj:`list`: list of nodes id.
+        """
+        first_stage = self.get_first_stage()
+        nodes = self.get_nodes_info(keys='id', stage=first_stage)
+        if len(nodes) == 1:
+            return nodes
+        elif len(nodes) > 1:
+            _error.multiple_root_node()
+        else:
+            _error.no_root_node()
+    # ----------------------------------------------------------------------- #
+
+    # last_stage_nodes_id -----------------------------------------------------
+    def last_stage_nodes_id(self):
+        """Return list of last stage nodes id.
+
+        Return:
+            :obj:`list`: list of nodes id.
+        """
+        last_stage = self.get_last_stage()
+        return self.get_nodes_info(keys='id', stage=last_stage)
     # ----------------------------------------------------------------------- #
 
     # ================
@@ -230,5 +305,55 @@ class Tree(object):
             _error.no_node_id(id)
         else:
             _error.mutiple_ids(id)
+    # ----------------------------------------------------------------------- #
+
+    # _add_constraints_info ---------------------------------------------------
+    def _add_constraints_info(self):
+        """Add constrains information for each node.
+
+        Return:
+            :obj:`dict`: problem data.
+        """
+        for node in self.get_nodes():
+            prob_info = self.get_node_problem_info(node['id'])
+            problem = _problem.Problem()
+            problem.load_from_file(**prob_info)
+            node['problem_info'] = {'A': problem.get_constrain_coeffs(),
+                                    'rhs': problem.get_rhs()}
+    # ----------------------------------------------------------------------- #
+
+    # ================
+    # CUTS INFO
+    # ================
+
+    # add_cuts ----------------------------------------------------------------
+    def add_cuts(self, id):
+        """Add new cuts to node id if problems where solved.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+        """
+        node = self.get_node(id=id, copy=False)
+
+        if 'cuts' not in node.keys():
+            node['cuts']
+        else:
+            node['cuts']  # = _utilities.join_data(node['cuts'], )
+    # ----------------------------------------------------------------------- #
+
+    # ================
+    # SOLUTION INFO
+    # ================
+
+    # update_solution ---------------------------------------------------------
+    def update_solution(self, id, solution):
+        """Update node solution.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+            solution (:obj:`dict`): solution information.
+        """
+        node = self.get_node(id=id, copy=False)
+        node['solution'] = solution
     # ----------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #

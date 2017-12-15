@@ -31,6 +31,7 @@ def get_solution(problem, solver_results, get_duals, solver):
 
     # Get constraints
     if get_duals:
+        relaxed_problem =
         results['constraints'] = get_constraints(problem, get_duals, solver)
 
     # Get solver information
@@ -82,6 +83,48 @@ def get_constraints(problem, get_duals):
                 results[c.getname()][index] = {'dual':
                                                problem.dual[cobject[index]]}
     return results
+# --------------------------------------------------------------------------- #
+
+
+# get_relaxed_problem_sol -----------------------------------------------------
+def get_relaxed_problem_sol(problem, solver='gurobi'):
+    """Get duals.
+
+    Get duals from the relaxed problem.
+
+    Args:
+        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of pyomo.
+        solver (:obj:`str`, opt): solver name. The disered solver must be in
+            the path. Defaults to ``'gurobi'``.
+
+    Return:
+        :obj:`dict`: results information.
+    """
+    # Create a solver
+    opt = _pyenv.SolverFactory(solver)
+
+    # Relax problem
+    int_vars = _integer_utils.get_integer_vars(problem)
+    _integer_utils.change_vars_domain(problem, int_vars, 'RealSet')
+
+    # Ask for dual information
+    problem.dual = _pyenv.Suffix(direction=_pyenv.Suffix.IMPORT)
+
+    # Create a model instance and optimize
+    solver_results = opt.solve(problem)
+
+    # Unrelax problem
+    _integer_utils.change_vars_domain(problem, int_vars, 'IntegerSet')
+
+    # Obtain results
+    status = str(solver_results['Solver'][0]['Termination condition'])
+    _log.debug('Status of the relaxed problem: ' + status)
+    if status == 'optimal':
+        results = _format_sol.get_solution(problem, solver_results,
+                                           duals, solver)
+        return results
+    else:
+        raise ValueError('Infeasible Problem.')
 # --------------------------------------------------------------------------- #
 
 

@@ -3,6 +3,7 @@
 
 # Python packages
 import pyomo.environ as _pyenv
+from pyomo.repn import collect
 
 # Package modules
 from ndusc.problem import problem_functions as _prob_func
@@ -15,6 +16,10 @@ class Problem(_pyenv.ConcreteModel):
 
     Problem class is a ConcreteModel class but adding utilities for the ndusc
     algorithm.
+
+    Example:
+        >>> from ndusc.problem.problem import Problem
+        >>> problem = Problem()
     """
 
     # __init__ ----------------------------------------------------------------
@@ -37,8 +42,34 @@ class Problem(_pyenv.ConcreteModel):
             file (:obj:`str`): model filename.
             function (:obj:`str`): model function name.
             data (:obj:`dict`): dictionary with model data information.
+
+        Example:
+            >>> from ndusc import examples
+            >>> prob_info = examples.problem_info.problem_info_example()
+            >>> problem.load_from_file(**prob_info)
         """
         _prob_func.load_from_file(self, file, function, data)
+    # ----------------------------------------------------------------------- #
+
+    # get_constrain_coeffs ----------------------------------------------------
+    def get_constrain_coeffs(self):
+        """Get constraints coefficients and optimality cuts.
+
+        Args:
+            node (:obj:`ndusc.node.Node`): tree node.
+        """
+        # A, rhs, obj_coef, c_sense, d_sense, cnames, vnames, cnames, v_domain
+        return collect.collect_linear_terms(self, [])[0]
+    # ----------------------------------------------------------------------- #
+
+    # get_rhs -----------------------------------------------------------------
+    def get_rhs(self):
+        """Get constraints coefficients and optimality cuts.
+
+        Args:
+            node (:obj:`ndusc.node.Node`): tree node.
+        """
+        return collect.collect_linear_terms(self, [])[1]
     # ----------------------------------------------------------------------- #
 
     # update_cuts -------------------------------------------------------------
