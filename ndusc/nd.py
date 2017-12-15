@@ -17,6 +17,15 @@ def nested_decomposition(tree_dic, data_dic, solver='gurobi'):
 
     Return:
         :obj:`dict`: solution.
+
+    Example:
+        >>> from ndusc.examples import input_module
+        >>> from ndusc.nd import nested_decomposition
+        >>> data = input_module.input_module_example()
+        >>> tree_dic = data.load_tree()
+        >>> data_dic = data.load_data()
+        >>> solver = 'gurobi'
+        >>> tree = nested_decomposition(tree_dic, data_dic, solver)
     """
     # INICIO METODO
     #

@@ -32,15 +32,29 @@ class Tree(object):
         self.__nodes = [_node.Node(n) for n in tree_dic['nodes']]
         self.__stages = sorted(list(set(_jmp.search("[*].stage",
                                         self.__nodes))))
-        self.__data_values = data_dic
+        self.__general_data = data_dic
+    # ----------------------------------------------------------------------- #
+
+    # ================
+    # GENERAL DATA INFO
+    # ================
+
+    # general_data ------------------------------------------------------------
+    def general_data(self):
+        """Get general_data.
+
+        Return:
+            :obj:`dict`: general data.
+        """
+        return self.__general_data
     # ----------------------------------------------------------------------- #
 
     # ================
     # STAGES INFO
     # ================
 
-    # get_stages --------------------------------------------------------------
-    def get_stages(self):
+    # stages --------------------------------------------------------------
+    def stages(self):
         """Get stages attribute.
 
         Return:
@@ -56,12 +70,22 @@ class Tree(object):
         if len(s) == 1:
             return s[0]
         else:
-            raise ValueError("More than one node in the first stage.")
+            _error.multiple_root_node()
     # ----------------------------------------------------------------------- #
 
     # ================
     # NODES INFO
     # ================
+
+    # nodes -------------------------------------------------------------------
+    def nodes(self):
+        """Get nodes.
+
+        Return:
+            :obj:`dict`: general data.
+        """
+        return self.__nodes
+    # ----------------------------------------------------------------------- #
 
     # get_nodes ---------------------------------------------------------------
     def get_nodes(self, **args):
@@ -83,7 +107,7 @@ class Tree(object):
                 'set': None,
                 'stage': 2}]
         """
-        return _search.get_nodes(self.__nodes, args)
+        return _search.get_nodes(self.nodes(), args)
     # ----------------------------------------------------------------------- #
 
     # get_nodes_info -------------------------------------------------------- #
@@ -125,9 +149,9 @@ class Tree(object):
             if len(n) == 0:
                 return None
             else:
-                raise ValueError("More than one previous node.")
+                _error.mutiple_parents(id)
         else:
-            raise ValueError("Node id {} not exists".format(id))
+            _error.no_node_id(id)
     # ----------------------------------------------------------------------- #
 
     # get_node ----------------------------------------------------------------
@@ -144,9 +168,9 @@ class Tree(object):
         if len(n) == 1:
             return n[0]
         if len(n) == 0:
-            raise ValueError("No node id.")
+            _error.no_node_id(id)
         else:
-            raise ValueError(_error.node_duplicity)
+            _error.mutiple_ids(id)
     # ----------------------------------------------------------------------- #
 
     # exist_node --------------------------------------------------------------
@@ -165,7 +189,7 @@ class Tree(object):
         if len(n) == 0:
             return False
         else:
-            raise ValueError("Duplicity node id.")
+            _error.mutiple_ids(id)
     # ----------------------------------------------------------------------- #
 
     # ================
@@ -182,7 +206,7 @@ class Tree(object):
         Return:
             :obj:`dict`: problem data.
         """
-        return _utilities.join_data(self.__data_values,
+        return _utilities.join_data(self.general_data(),
                                     self.get_node(id=id),
                                     ['params', 'sets'])
     # ----------------------------------------------------------------------- #
@@ -203,8 +227,8 @@ class Tree(object):
             problem_info['data'] = self.get_node_data(id)
             return problem_info
         elif len(problem_info) == 0:
-            raise ValueError("Unknown node id {}.".format(id))
+            _error.no_node_id(id)
         else:
-            raise ValueError("Duplicated node id {}.".format(id))
+            _error.mutiple_ids(id)
     # ----------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #

@@ -3,4 +3,4 @@ params:
     prod: 200
     cost: 1
     high_cost: 3
-    store_cost: 0.5  
+    store_cost: 0.5

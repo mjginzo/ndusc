@@ -10,13 +10,7 @@
 
 from pyomo.environ import *
 
-def model_S1(data):
-    #
-    # Model
-    #
-
-    m = ConcreteModel()
-
+def model_S1(m, data):
     #
     # Sets
     #
@@ -24,7 +18,7 @@ def model_S1(data):
     #
     # Parameters
     #
-
+    print(data)
     m.prod = Param(initialize=data['params']['prod'])
     m.cost = Param(initialize=data['params']['cost'])
     m.high_cost = Param(initialize=data['params']['high_cost'])
@@ -61,5 +55,3 @@ def model_S1(data):
         return m.x + m.w - m.y == m.demand
 
     m.total_demand = Constraint(rule=demand_rule)
-
-    return m

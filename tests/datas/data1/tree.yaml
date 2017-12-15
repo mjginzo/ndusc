@@ -4,68 +4,68 @@ nodes:
     stage: 1
     probability: 1
     model:
-        file: data/model_S1.py
+        file: tests/datas/data1/model_S1.py
         function: model_S1
-    set:
+    sets:
     params:
-      - demand: 1
+        demand: 1
   - id: 2
     prev_id: 1
     stage: 2
     probability: 0.5
     model:
-        file: data/model_S2.py
+        file: tests/datas/data1/model_S2.py
         function: model_S2
-    set:
+    sets:
     params:
-      - demand: 1
+        demand: 1
   - id: 3
     prev_id: 1
     stage: 2
     probability: 0.5
     model:
-        file: data/model_S2.py
+        file: tests/datas/data1/model_S2.py
         function: model_S2
-    set:
+    sets:
     params:
-      - demand: 3
+        demand: 3
   - id: 4
     prev_id: 2
     stage: 3
     probability: 0.25
     model:
-        file: data/model_S3.py
+        file: tests/datas/data1/model_S3.py
         function: model_S3
-    set:
+    sets:
     params:
-      - demand: 1
+        demand: 1
   - id: 5
     prev_id: 2
     stage: 3
     probability: 0.25
     model:
-        file: data/model_S3.py
+        file: tests/datas/data1/model_S3.py
         function: model_S3
-    set:
+    sets:
     params:
-      - demand: 3
+        demand: 3
   - id: 6
     prev_id: 3
     stage: 3
     probability: 0.25
     model:
-        file: data/model_S3.py
+        file: tests/datas/data1/model_S3.py
         function: model_S3
-    set:
+    sets:
     params:
-      - demand: 1
+        demand: 1
   - id: 7
     prev_id: 3
     stage: 3
     probability: 0.25
     model:
-        file: data/model_S3.py
+        file: tests/datas/data1/model_S3.py
         function: model_S3
-    set:
+    sets:
     params:
-      - demand: 3
+        demand: 3
