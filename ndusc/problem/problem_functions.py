@@ -2,16 +2,18 @@
 """Functionalities for Model class."""
 
 # packages
+import importlib.util as _importu
 import pyomo.environ as _pyenv
 import logging as _log
 
 # package modules
 from ndusc.problem import format_sol as _format_sol
 from ndusc.problem import integer_utils as _integer_utils
+import ndusc.error.error as _error
 
 
 # load_from_file --------------------------------------------------------------
-def load_from_file(problem, file, function, data):
+def load_from_file(problem, problem_file, function, data):
     """Load ConcreteModel from file.
 
     Load ConcreteModel from a function defined in a file and initialize the
@@ -19,13 +21,27 @@ def load_from_file(problem, file, function, data):
 
     Args:
         problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of pyomo.
-        file (:obj:`str`): model filename.
+        problem_file (:obj:`str`): model filename.
         function (:obj:`str`): model function name.
         data (:obj:`dict`): dictionary with model data information.
     """
-    with open(file, 'r') as model_file:
-        exec(model_file.read())
-    eval("{}(problem, data)".format(function))
+    spec = _importu.spec_from_file_location("problem", problem_file)
+    if spec is not None:
+        # Load module
+        foo = _importu.module_from_spec(spec)
+        spec.loader.exec_module(foo)
+
+        # Load function
+        try:
+            problem_function = getattr(foo, function)
+        except AttributeError:
+            _error.function_not_found(problem_file, function)
+
+        # Execute function
+        problem_function(problem, data)
+
+    else:
+        _error.file_not_found(problem_file)
 # --------------------------------------------------------------------------- #
 
 
