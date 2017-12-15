@@ -6,42 +6,37 @@ Todo: Could be tree methods?
 """
 
 
-# compute_cuts ----------------------------------------------------------------
-def compute_cuts(tree, node):
-    """Compute new cuts parameters.
-
-    Given the successor nodes, computes the needed cuts parameters.
-
-    Args:
-        node (:obj:`int` or `str`): node id.
-        tree (:obj:`Tree`): tree.
-    """
-    tree = compute_feas_cuts(tree)
-    tree = compute_feas_cuts(tree)
-
-    return tree
-# --------------------------------------------------------------------------- #
-
-
 # compute_feas_cuts -----------------------------------------------------------
-def compute_feas_cuts(tree, node):
+def compute_feas_cuts(cuts, node, child_nodes):
     """Compute feasibility cuts parameters.
 
     Args:
         node (:obj:`int` or `str`): node id.
         tree (:obj:`Tree`): tree.
     """
-    return tree
+    return cuts
 # --------------------------------------------------------------------------- #
 
 
 # compute_opt_cuts ------------------------------------------------------------
-def compute_opt_cuts(tree, node):
+def compute_opt_cuts(cuts, node, child_nodes):
     """Compute optimality cuts parameters.
 
     Args:
         node (:obj:`int` or `str`): node id.
         tree (:obj:`Tree`): tree.
     """
-    return tree
+    return cuts
+# --------------------------------------------------------------------------- #
+
+
+# compute_int_cuts ------------------------------------------------------------
+def compute_int_cuts(cuts, node, child_nodes):
+    """Compute optimality cuts parameters.
+
+    Args:
+        node (:obj:`int` or `str`): node id.
+        tree (:obj:`Tree`): tree.
+    """
+    return cuts
 # --------------------------------------------------------------------------- #
