@@ -10,12 +10,7 @@
 
 from pyomo.environ import *
 
-def model_S2(data):
-    #
-    # Model
-    #
-
-    m = ConcreteModel()
+def model_S2(m, data):
 
     #
     # Sets
@@ -62,5 +57,3 @@ def model_S2(data):
         return m.x + m.w + m.y_prev - m.y == m.demand
 
     m.total_demand = Constraint(rule=demand_rule)
-
-    return m
