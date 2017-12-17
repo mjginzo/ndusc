@@ -58,3 +58,10 @@ def file_not_found(filename):
     """Error message when file not found."""
     raise IOError("File '{}' not found.".format(filename))
 # --------------------------------------------------------------------------- #
+
+
+# infeasible_problem ----------------------------------------------------------
+def infeasible_problem():
+    """Error message when the problem is infeasible."""
+    raise ValueError('Infeasible problem.')
+# --------------------------------------------------------------------------- #
