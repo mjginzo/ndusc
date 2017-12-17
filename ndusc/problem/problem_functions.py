@@ -8,8 +8,46 @@ import logging as _log
 
 # package modules
 from ndusc.problem import format_sol as _format_sol
-from ndusc.problem import integer_utils as _integer_utils
 import ndusc.error.error as _error
+
+
+# fix_vars --------------------------------------------------------------------
+def fix_vars(problem, vars_val):
+    """Fix or unfix integer variables.
+
+    Args:
+        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+            pyomo.
+        vars_val (:obj:`dict`): dictionary with variables value
+            information.
+    """
+    for v in vars_val.keys():
+        if hasattr(problem, v):
+            var = getattr(problem, v)
+            for index in vars_val[v].keys():
+                if index in var.keys():
+                    variable = var[index]
+                    variable.value = vars_val[v][index]
+                    variable.fixed = True
+    problem.preprocess()
+# --------------------------------------------------------------------------- #
+
+
+# get_vars --------------------------------------------------------------------
+def get_var(problem, varname, index):
+    """Get variables.
+
+    Args:
+        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+            pyomo.
+        var (:obj:`list`): variable name.
+    Return:
+        :obj:`pyomo.core.base.var._GeneralVarData`: pyomo variable.
+
+    Todo: check all runs ok.
+    """
+    return getattr(problem, varname)[index]
+# --------------------------------------------------------------------------- #
 
 
 # load_from_file --------------------------------------------------------------
@@ -46,7 +84,8 @@ def load_from_file(problem, problem_file, function, data):
 
 
 # solve -----------------------------------------------------------------------
-def solve(problem, solver='gurobi', duals=True):
+def solve(problem, solver='gurobi',
+          info=['variables', 'objective', 'solver_info', 'duals']):
     """Solve.
 
     Solve a given problem.
@@ -55,23 +94,16 @@ def solve(problem, solver='gurobi', duals=True):
         problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of pyomo.
         solver (:obj:`str`, opt): solver name. The disered solver must be in
             the path. Defaults to ``'gurobi'``.
-        duals (:obj:`bool`, opt): if ``True`` return dual information. Defaults
-            to ``True``.
+        info (:obj:`list`, opt): list strings with desired information to
+            return. Options: ``'variables'``, ``'objective'``,
+            ``'solver_info'``, ``'duals'``. Defaults to
+            ``['variables', 'objective', 'solver_info', 'duals']``.
 
     Return:
         :obj:`dict`: results information.
     """
     # Create a solver
     opt = _pyenv.SolverFactory(solver)
-
-    if duals:
-        int_vars = _integer_utils.get_integer_vars(problem)
-        if len(int_vars) == 0:
-            if not hasattr(problem, 'dual'):
-                problem.del_component('dual')
-            problem.dual = _pyenv.Suffix(direction=_pyenv.Suffix.IMPORT)
-        else:
-            raise ValueError('Integer problem has not dual information.')
 
     # Create a model instance and optimize
     solver_results = opt.solve(problem)
@@ -80,9 +112,9 @@ def solve(problem, solver='gurobi', duals=True):
     status = str(solver_results['Solver'][0]['Termination condition'])
     _log.info('Status: ' + status)
     if status == 'optimal':
-        results = _format_sol.get_solution(problem, solver_results,
-                                           duals, solver)
+        results = _format_sol.get_solution_info(problem, solver_results,
+                                                solver, info)
         return results
     else:
-        raise ValueError('Infeasible Problem.')
+        _error.infeasible_problem()
 # --------------------------------------------------------------------------- #

@@ -51,16 +51,19 @@ def nested_decomposition(tree_dic, data_dic, solver='gurobi'):
             print("  * NUMBER OF NODES IN THE LEVEL: ", len(nodes_id))
             print("")
 
+        nodes_id = [1, 2, 3, 1]
+
         for node_id in nodes_id:
             # --------------------
             # Add new cuts to the node
             # --------------------
-            if node_id in last_stage_nodes:
-                if (verbosity):
-                    print("    * CREATING CUTS")
-                print("        * Get duals")
-                tree.add_cuts(node_id)
-                # cuts.create_cuts(modeldata.get_model_data(), node)
+            if node_id not in last_stage_nodes:
+                if tree.have_next_nodes_eq_sol(node_id):
+                    if (verbosity):
+                        print("    * CREATING CUTS")
+                    print("        * Get duals")
+                    tree.add_cuts(node_id)
+                    # cuts.create_cuts(modeldata.get_model_data(), node)
 
             # --------------------
             # Loading node
@@ -72,6 +75,14 @@ def nested_decomposition(tree_dic, data_dic, solver='gurobi'):
             problem.load_from_file(**problem_info)
 
             # --------------------
+            # Fix previous node variables value
+            # --------------------
+            if node_id not in first_stage_node:
+                # Get previous node variables
+                variables = tree.get_previous_node_vars(node_id)
+                problem.fix_vars(variables)
+
+            # --------------------
             # Solving node
             # --------------------
             if (verbosity):
@@ -80,11 +91,10 @@ def nested_decomposition(tree_dic, data_dic, solver='gurobi'):
             if node_id in first_stage_node:
                 get_duals = False
             else:
-                print("        * Get duals")
+                print("        * GET DUALS")
                 get_duals = True
 
             solution = problem.solve(solver, get_duals)
-
             # --------------------
             # Update node solution
             # --------------------
@@ -96,6 +106,5 @@ def nested_decomposition(tree_dic, data_dic, solver='gurobi'):
         stage = stage + 1
         stopcontion = True
 
-    output = 1
-    return output
+    return tree
 # --------------------------------------------------------------------------- #

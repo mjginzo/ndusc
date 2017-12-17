@@ -51,6 +51,22 @@ class Problem(_pyenv.ConcreteModel):
         _prob_func.load_from_file(self, file, function, data)
     # ----------------------------------------------------------------------- #
 
+    # fix_vars ----------------------------------------------------------------
+    def fix_vars(self, vars_val):
+        """Fix or unfix integer variables.
+
+        Args:
+            problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+                pyomo.
+            vars_val (:obj:`dict`): dictionary with variables value
+                information.
+
+        Example:
+        """
+        vars_val
+        _prob_func.fix_vars(self, vars_val)
+    # ----------------------------------------------------------------------- #
+
     # get_constrain_coeffs ----------------------------------------------------
     def get_constrain_coeffs(self):
         """Get constraints coefficients and optimality cuts.
@@ -97,7 +113,11 @@ class Problem(_pyenv.ConcreteModel):
         Return:
             :obj:`dict`: results information.
         """
-        return _prob_func.solve(self, solver, duals)
+        if duals:
+            info = ['variables', 'objective', 'solver_info', 'duals']
+        else:
+            info = ['variables', 'objective', 'solver_info']
+        return _prob_func.solve(self, solver, info)
     # ----------------------------------------------------------------------- #
 
     # create_feas_cuts --------------------------------------------------------

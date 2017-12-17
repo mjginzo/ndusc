@@ -10,6 +10,7 @@ import ndusc.tree.search as _search
 import ndusc.utilities as _utilities
 import ndusc.error.error as _error
 import ndusc.problem.problem as _problem
+import ndusc.cut.cut as _cut
 
 
 # Tree ------------------------------------------------------------------------
@@ -82,7 +83,7 @@ class Tree(object):
         """Get last stage."""
         prev_node = self.get_nodes_id()[-1]
         while prev_node:
-            new_node = self.get_next_node_id(prev_node)
+            new_node = self.get_next_nodes_id(prev_node)
             if new_node:
                 prev_node = new_node
             else:
@@ -180,8 +181,22 @@ class Tree(object):
             _error.no_node_id(id)
     # ----------------------------------------------------------------------- #
 
-    # get_next_node_id --------------------------------------------------------
-    def get_next_node_id(self, id):
+    # get_previous_node_vars --------------------------------------------------
+    def get_previous_node_vars(self, id):
+        """Return previous node id.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`str` or :obj:`int`: previous node id.
+        """
+        prev_id = self.get_previous_node_id(id)
+        return self.get_node_variables_info(prev_id)
+    # ----------------------------------------------------------------------- #
+
+    # get_next_nodes_id -------------------------------------------------------
+    def get_next_nodes_id(self, id):
         """Return next node id.
 
         Args:
@@ -271,7 +286,7 @@ class Tree(object):
     # PROBLEM INFO
     # ================
 
-    # get_node_data ------------------------------------------------------
+    # get_node_data -----------------------------------------------------------
     def get_node_data(self, id):
         """Get data information from the node.
 
@@ -307,6 +322,32 @@ class Tree(object):
             _error.mutiple_ids(id)
     # ----------------------------------------------------------------------- #
 
+    # get_constraints_info ----------------------------------------------------
+    def get_constraints_info(self, ids):
+        """Get constraints information of nodes ids.
+
+        Args:
+            ids (:obj:`list`): list of nodes ids.
+
+        Return:
+            :obj:`dict`: constraints information.
+        """
+        return {i: self._get_node_constraints_info(i) for i in ids}
+    # ----------------------------------------------------------------------- #
+
+    # _get_node_constraints_info ----------------------------------------------
+    def _get_node_constraints_info(self, id):
+        """Get constraints information.
+
+        Args:
+            id (:obj:`list`): nodes id.
+
+        Return:
+            :obj:`dict`: constraints information.
+        """
+        return self.get_node(id=id)['problem_info']
+    # ----------------------------------------------------------------------- #
+
     # _add_constraints_info ---------------------------------------------------
     def _add_constraints_info(self):
         """Add constrains information for each node.
@@ -336,7 +377,7 @@ class Tree(object):
         node = self.get_node(id=id, copy=False)
 
         if 'cuts' not in node.keys():
-            node['cuts']
+            node['cuts'] = _cut.Cut()
         else:
             node['cuts']  # = _utilities.join_data(node['cuts'], )
     # ----------------------------------------------------------------------- #
@@ -355,5 +396,84 @@ class Tree(object):
         """
         node = self.get_node(id=id, copy=False)
         node['solution'] = solution
+    # ----------------------------------------------------------------------- #
+
+    # get_node_variables_info -------------------------------------------------
+    def get_node_variables_info(self, id):
+        """Get variable information of node.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`dict`: variables information.
+        """
+        try:
+            return self.get_node(id=id)['solution']['variables']
+        except KeyError:
+            return None
+    # ----------------------------------------------------------------------- #
+
+    # get_duals_info ----------------------------------------------------------
+    def get_duals_info(self, ids):
+        """Get nodes dual information.
+
+        Args:
+            ids (:obj:`str` or :obj:`int`): list of nodes ids.
+
+        Return:
+            :obj:`dict`: dual information.
+        """
+        return {i: self._get_node_duals_info(i) for i in ids}
+    # ----------------------------------------------------------------------- #
+
+    # _get_node_duals_info ----------------------------------------------------
+    def _get_node_duals_info(self, id):
+        """Get node dual information.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`dict`: dual information.
+        """
+        try:
+            cons = self.get_node(id=id)['solution']['constraints']
+            return {c: {i: cons[c][i]['dual']} for c in cons for i in cons[c]}
+        except KeyError:
+            return None
+    # ----------------------------------------------------------------------- #
+
+    # has_next_nodes_eq_sol ---------------------------------------------------
+    def have_next_nodes_eq_sol(self, id):
+        """Check if next nodes have the same solution as id node.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`bool`: true if the variable solution is the same.
+        """
+        id_vars = self.get_node_variables_info(id)
+        if id_vars is not None:
+            equal = []
+            for n_id in self.get_next_nodes_id(id):
+
+                # If no solution key return False ---
+                try:
+                    n_vars = self.get_node_variables_info(n_id)
+                except KeyError:
+                    return False
+                # ------------------------------------
+
+                for k in id_vars.keys():
+                    for i in id_vars[k].keys():
+                        try:
+                            equal += [id_vars[k][i] == n_vars[k][i]]
+                        except KeyError:
+                            pass
+            return all(equal)
+        else:
+            return None
     # ----------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
