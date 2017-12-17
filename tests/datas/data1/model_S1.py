@@ -19,11 +19,14 @@ def model_S1(m, data):
     m.current_stage = environ.Set(initialize=[1])
 
     # Parameters
-    m.prod = environ.Param(initialize=data['params']['prod'])
-    m.cost = environ.Param(initialize=data['params']['cost'])
-    m.high_cost = environ.Param(initialize=data['params']['high_cost'])
-    m.store_cost = environ.Param(initialize=data['params']['store_cost'])
-    m.demand = environ.Param(initialize=data['params']['demand'])
+    m.prod = environ.Param(m.current_stage, initialize=data['params']['prod'])
+    m.cost = environ.Param(m.current_stage, initialize=data['params']['cost'])
+    m.high_cost = environ.Param(m.current_stage,
+                                initialize=data['params']['high_cost'])
+    m.store_cost = environ.Param(m.current_stage,
+                                 initialize=data['params']['store_cost'])
+    m.demand = environ.Param(m.current_stage,
+                             initialize=data['params']['demand'])
 
     # Variables
     m.x = environ.Var(m.current_stage, within=environ.PositiveReals)
@@ -34,24 +37,28 @@ def model_S1(m, data):
     # Objective
     # ------------
 
-    def Obj_rule(m):
-        return m.cost*m.x[1] + m.high_cost*m.w[1] + m.store_cost*m.y[1]
+    def Obj_rule(m, s):
+        return m.cost[s]*m.x[s] +\
+               m.high_cost[s]*m.w[s] +\
+               m.store_cost[s]*m.y[s]
 
-    m.Obj = environ.Objective(rule=Obj_rule, sense=environ.minimize)
+    m.Obj = environ.Objective(m.current_stage,
+                              rule=Obj_rule, sense=environ.minimize)
 
     # ------------
     # Constraints
     # ------------
 
     # lower production
-    def low_prod_rule(m):
-        return m.x[1] <= m.prod
+    def low_prod_rule(m, s):
+        return m.x[s] <= m.prod[s]
 
-    m.low_prod = environ.Constraint(rule=low_prod_rule)
+    m.low_prod = environ.Constraint(m.current_stage, rule=low_prod_rule)
 
     # total demand
-    def total_demand_rule(m):
-        return m.x[1] + m.w[1] - m.y[1] == m.demand
+    def total_demand_rule(m, s):
+        return m.x[s] + m.w[s] - m.y[s] == m.demand[s]
 
-    m.total_demand = environ.Constraint(rule=total_demand_rule)
+    m.total_demand = environ.Constraint(m.current_stage,
+                                        rule=total_demand_rule)
 # --------------------------------------------------------------------------- #
