@@ -8,22 +8,19 @@ Todo: Check functions.
 import pyomo.environ as _pyenv
 
 
-# fix_integer_vars ------------------------------------------------------------
-def fix_integer_vars(problem, fix=True):
-    """Fix or unfix integer variables.
+# relax -----------------------------------------------------------------------
+def relax(problem):
+    """Relax the integer variables.
+
+    Change domain of all integer variables to the Real set insted of Integer
+    set.
 
     Args:
         problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
             pyomo.
-        fix (:obj:`str`, opt): if ``True`` fix integer variables. Defaults
-            to ``True``.
     """
-    for v in problem.component_objects(_pyenv.Var, active=True):
-        vobject = getattr(problem, str(v))
-        for i in vobject:
-            if str(v[i].domain_type) in "IntegerSet":
-                v[i].fixed = fix
-    problem.preprocess()
+    integer_vars = get_integer_vars(problem)
+    change_vars_domain(problem, integer_vars, 'RealSet')
 # --------------------------------------------------------------------------- #
 
 

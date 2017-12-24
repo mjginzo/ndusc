@@ -1,59 +1,65 @@
-#  _________________________________________________________________________
-#
-#  Example: stochastic problem from the thesis of Lee.
-#  First stage model.
-#  _________________________________________________________________________
+# -*- coding: utf-8 -*-
+"""Example 1 taken from page 270 of the book: Birge & Louveaux (2011).
 
-#
-# Imports
-#
+Introduction to Stochastic Programming.
+"""
 
-from pyomo.environ import *
+# Python packages
+from pyomo import environ
 
+
+# model_S3 --------------------------------------------------------------------
 def model_S2(m, data):
+    """Second stage model."""
+    # ------------
+    # Definitions
+    # ------------
 
-    #
     # Sets
-    #
+    m.stages = environ.Set(initialize=[1, 2])
+    m.current_stage = environ.Set(initialize=[2])
 
-    #
     # Parameters
-    #
+    m.prod = environ.Param(m.current_stage, initialize=data['params']['prod'])
+    m.cost = environ.Param(m.current_stage, initialize=data['params']['cost'])
+    m.high_cost = environ.Param(m.current_stage,
+                                initialize=data['params']['high_cost'])
+    m.store_cost = environ.Param(m.current_stage,
+                                 initialize=data['params']['store_cost'])
+    m.demand = environ.Param(m.current_stage,
+                             initialize=data['params']['demand'])
 
-    m.prod = Param(initialize=data['params']['prod'])
-    m.cost = Param(initialize=data['params']['cost'])
-    m.high_cost = Param(initialize=data['params']['high_cost'])
-    m.store_cost = Param(initialize=data['params']['store_cost'])
-    m.demand = Param(initialize=data['params']['demand'])
-
-    m.y_prev = Param(initialize=data['params']['y'])
-    #
     # Variables
-    #
+    m.x = environ.Var(m.current_stage, within=environ.PositiveReals)
+    m.w = environ.Var(m.current_stage, within=environ.PositiveReals)
+    m.y = environ.Var(m.stages, within=environ.PositiveReals)
 
-    m.x = Var(within=PositiveReals)
-    m.w = Var(within=PositiveReals)
-    m.y = Var(within=PositiveReals)
-
-    #
+    # ------------
     # Objective
-    #
+    # ------------
 
-    def Obj_rule(m):
-        return  m.cost * m.x + m.high_cost * m.w + m.store_cost * m.y
+    def Obj_rule(m, s):
+        return m.cost[s]*m.x[s] +\
+               m.high_cost[s]*m.w[s] +\
+               m.store_cost[s]*m.y[s]
 
-    m.Obj = Objective(rule=Obj_rule, sense=minimize)
+    m.Obj = environ.Objective(m.current_stage, rule=Obj_rule,
+                              sense=environ.minimize)
 
-    #
+    # ------------
     # Constraints
-    #
+    # ------------
 
-    def prod_rule(m):
-        return m.x <= m.prod
+    # low production
+    def low_prod_rule(m, s):
+        return m.x[s] <= m.prod[s]
 
-    m.low_prod = Constraint(rule=prod_rule)
+    m.low_prod = environ.Constraint(m.current_stage, rule=low_prod_rule)
 
-    def demand_rule(m):
-        return m.x + m.w + m.y_prev - m.y == m.demand
+    # total demand
+    def total_demand_rule(m, s):
+        return m.x[s] + m.w[s] + m.y[s-1] - m.y[s] == m.demand[s]
 
-    m.total_demand = Constraint(rule=demand_rule)
+    m.total_demand = environ.Constraint(m.current_stage,
+                                        rule=total_demand_rule)
+# --------------------------------------------------------------------------- #

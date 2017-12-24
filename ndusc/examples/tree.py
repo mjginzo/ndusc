@@ -2,7 +2,7 @@
 """Tree examples module."""
 
 # Package modules
-from ndusc.input_module import Input_module
+from ndusc.input.input_module import Input_module
 from ndusc.tree.tree import Tree
 
 

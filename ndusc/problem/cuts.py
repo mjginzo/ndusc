@@ -8,53 +8,28 @@ Todo: Create cut functions for LP problems and MILP problems.
 import pyomo.environ as _pyenv
 
 
-# update_cuts -----------------------------------------------------------------
-# def update_cuts(model, node):
-#    """Update feasibility and optimality cuts.
-#
-#    Args:
-#        node (:obj:`ndusc.node.Node`): tree node.
-#    """
-#
-#    if 'feas' in node['cuts'].keys():
-#        log.info('\t- feasibility cuts')
-#        create_feas_cuts(model, node['cuts']['feas'])
-#    if 'opt' in node['cuts'].keys():
-#        log.info('\t- optimality cuts')
-#        create_opt_cuts(model, node['cuts']['opt'])
-# --------------------------------------------------------------------------- #
-
-
 # create_feas_cuts ------------------------------------------------------------
 def create_feas_cuts(problem, feas_cuts):
     """Create feasibility cuts.
 
     Args:
         problem (:obj:`ndusc.`): mathematical optimization problem.
-        feas_cuts (:obj:`ndusc.cuts.Cuts`): cuts of the current node.
+        feas_cuts (:obj:`ndusc.cuts.Cuts`): feasibility cuts of the current
+            node.
 
     Todo: ¿What happends when a variable has not index?
     """
     # Sets
-    problem._Cuts_Feas = _pyenv.Set(initialize=feas_cuts['sets']['id'])
-    problem._Vars = _pyenv.Set(initialize=feas_cuts['sets']['vars'])
-
-    # Parameters
-    problem._D = _pyenv.Param(problem._Cuts_Feas, problem._Vars,
-                              initialize=feas_cuts['params']['D'],
-                              mutable=True)
-    problem._d = _pyenv.Param(problem._Cuts_Feas,
-                              initialize=feas_cuts['params']['d'],
-                              mutable=True)
+    problem._Cuts_Feas = _pyenv.Set(initialize=[i for i in feas_cuts.keys()])
 
     # Constraints
     def _feas_cuts_rule(problem, l):
-        return sum([problem._D[l, (str(v), i)] *
-                    getattr(problem, str(v))[i]
-                    for v in problem.component_objects(_pyenv.Var, active=True)
-                    if str(v) != 'Aux_Obj'
-                    for i in v.index_set()
-                    ]) >= problem._d[l]
+        return sum([feas_cuts[l]['A'][v][i] *
+                    getattr(problem, v)[i]
+                    for v in feas_cuts[l]['A'].keys()
+                    if v != 'Aux_Obj'
+                    for i in feas_cuts[l]['A'][v].keys()
+                    ]) >= feas_cuts[l]['rhs']
 
     problem._feas_cuts = _pyenv.Constraint(problem._Cuts_Feas,
                                            rule=_feas_cuts_rule)
@@ -69,11 +44,9 @@ def create_opt_cuts(problem, opt_cuts):
         problem (:obj:`ndusc.problem.Problem`): mathematical optimization
             problem.
         cuts (:obj:`dict`): optimality cuts of the current node.
-
-    Todo: Check if current optimality constraints exists.
     """
     # Sets
-    problem._Cuts_Opt = _pyenv.Set(initialize=opt_cuts['sets']['cuts'])
+    problem._Cuts_Opt = _pyenv.Set(initialize=[i for i in opt_cuts.keys()])
 
     # Variables
     problem.Aux_Obj = _pyenv.Var()
@@ -81,92 +54,78 @@ def create_opt_cuts(problem, opt_cuts):
     # Objective
     for o in problem.component_objects(_pyenv.Objective, active=True):
         if o.active:
-            problem._Obj = _pyenv.Objective(rule=o.rule+problem.Aux_Obj)
+            expression = sum([o.rule(problem, s)
+                              for s in problem.current_stage])+problem.Aux_Obj
+            problem._Obj = _pyenv.Objective(expr=expression)
             o.deactivate()
 
     # Constraints
     def _opt_cuts_rule(problem, l):
-        return sum([opt_cuts['params']['E'][l][str(v)][i] *
-                    getattr(problem, str(v))[i]
-                    for v in problem.component_objects(_pyenv.Var, active=True)
-                    if str(v) != 'Aux_Obj'
-                    for i in v.index_set()
-                    ]) + problem.Aux_Obj >= opt_cuts['params']['e'][l]
+        return sum([opt_cuts[l]['A'][v][i] *
+                    getattr(problem, v)[i]
+                    for v in opt_cuts[l]['A'].keys()
+                    if v != 'Aux_Obj'
+                    for i in opt_cuts[l]['A'][v].keys()
+                    ]) + problem.Aux_Obj >= opt_cuts[l]['rhs']
 
     problem._opt_cuts = _pyenv.Constraint(problem._Cuts_Opt,
                                           rule=_opt_cuts_rule)
 # --------------------------------------------------------------------------- #
 
 
-# create_feas_int_cuts --------------------------------------------------------
-def create_feas_int_cuts(problem, opt_cuts):
-    """Create feasibility integer cuts.
+# create_bin_feas_cuts --------------------------------------------------------
+def create_bin_feas_cuts(problem, bin_feas_cuts):
+    """Create binary feasibility cuts.
 
     Args:
         problem (:obj:`ndusc.problem.Problem`): mathematical optimization
             problem.
-        cuts (:obj:`dict`): optimality cuts of the current node.
+        bin_feas_cuts (:obj:`dict`): cuts information.
 
     Todo: Check if current optimality constraints exists.
     """
     # Sets
-    problem._Cuts_Opt = _pyenv.Set(initialize=opt_cuts['sets']['cuts'])
-
-    # Variables
-    problem.Aux_Obj = _pyenv.Var()
-
-    # Objective
-    for o in problem.component_objects(_pyenv.Objective, active=True):
-        if o.active:
-            problem._Obj = _pyenv.Objective(rule=o.rule+problem.Aux_Obj)
-            o.deactivate()
+    set_bin_feas_cuts = [i for i in bin_feas_cuts.keys()]
+    problem._Cuts_Bin_Feas = _pyenv.Set(initialize=set_bin_feas_cuts)
 
     # Constraints
-    def _opt_cuts_rule(problem, l):
-        return sum([opt_cuts['params']['E'][l][str(v)][i] *
-                    getattr(problem, str(v))[i]
-                    for v in problem.component_objects(_pyenv.Var, active=True)
-                    if str(v) != 'Aux_Obj'
-                    for i in v.index_set()
-                    ]) >= opt_cuts['params']['e'][l]
+    def _bin_feas_cuts_rule(problem, l):
+        return sum([bin_feas_cuts[l]['A'][v][i] *
+                    getattr(problem, v)[i]
+                    for v in bin_feas_cuts[l]['A'].keys()
+                    if v != 'Aux_Obj'
+                    for i in bin_feas_cuts[l]['A'][v].keys()
+                    ]) >= bin_feas_cuts[l]['rhs']
 
-    problem._opt_cuts = _pyenv.Constraint(problem._Cuts_Opt,
-                                          rule=_opt_cuts_rule)
+    problem._bin_feas_cuts = _pyenv.Constraint(problem._Cuts_Bin_Feas,
+                                               rule=_bin_feas_cuts_rule)
 # --------------------------------------------------------------------------- #
 
 
-# create_opt_int_cuts ---------------------------------------------------------
-def create_opt_int_cuts(problem, opt_cuts):
+# create_bin_opt_cuts ---------------------------------------------------------
+def create_bin_opt_cuts(problem, bin_opt_cuts):
     """Create optimality integer cuts.
 
     Args:
         problem (:obj:`ndusc.problem.Problem`): mathematical optimization
             problem.
-        cuts (:obj:`dict`): optimality cuts of the current node.
+        bin_opt_cuts (:obj:`dict`): binary optimality cuts of the current node.
 
     Todo: Check if current optimality constraints exists.
     """
     # Sets
-    problem._Cuts_Opt = _pyenv.Set(initialize=opt_cuts['sets']['cuts'])
-
-    # Variables
-    problem.Aux_Obj = _pyenv.Var()
-
-    # Objective
-    for o in problem.component_objects(_pyenv.Objective, active=True):
-        if o.active:
-            problem._Obj = _pyenv.Objective(rule=o.rule+problem.Aux_Obj)
-            o.deactivate()
+    set_bin_opt_cuts = [i for i in bin_opt_cuts.keys()]
+    problem._Cuts_Bin_Opt = _pyenv.Set(initialize=set_bin_opt_cuts)
 
     # Constraints
-    def _opt_cuts_rule(problem, l):
-        return sum([opt_cuts['params']['E'][l][str(v)][i] *
-                    getattr(problem, str(v))[i]
-                    for v in problem.component_objects(_pyenv.Var, active=True)
-                    if str(v) != 'Aux_Obj'
-                    for i in v.index_set()
-                    ]) >= opt_cuts['params']['e'][l]
+    def _bin_opt_cuts_rule(problem, l):
+        return sum([bin_opt_cuts[l]['A'][v][i] *
+                    getattr(problem, v)[i]
+                    for v in bin_opt_cuts[l]['A'].keys()
+                    if v != 'Aux_Obj'
+                    for i in bin_opt_cuts[l]['A'][v].keys()
+                    ]) + problem.Aux_Obj >= bin_opt_cuts[l]['rhs']
 
-    problem._opt_cuts = _pyenv.Constraint(problem._Cuts_Opt,
-                                          rule=_opt_cuts_rule)
+    problem._bin_opt_cuts = _pyenv.Constraint(problem._Cuts_Bin_Opt,
+                                              rule=_bin_opt_cuts_rule)
 # --------------------------------------------------------------------------- #

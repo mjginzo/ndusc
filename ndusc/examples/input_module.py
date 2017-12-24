@@ -2,10 +2,10 @@
 """Input_module examples module."""
 
 # Package modules
-from ndusc.input_module import Input_module
+from ndusc.input.input_module import Input_module
 
 
-# input_module_example ----------------------------------------------------------------
+# input_module_example --------------------------------------------------------
 def input_module_example(test_example='1'):
     """Load tree of the test examples folder.
 

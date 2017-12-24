@@ -3,8 +3,27 @@
 
 
 # -----------------------
+# Nested Decomposition
+# -----------------------
+
+# parameter_problem_type ------------------------------------------------------
+def parameter_problem_type(problem_type):
+    """Error message when unknown problem_type parameter."""
+    raise ValueError(("Unknown problem_type parameter: {}."
+                     "\nAllowed options: 'continuous' or 'binary'."
+                      ).format(problem_type))
+
+
+# -----------------------
 # Trees
 # -----------------------
+
+# no_root_node ----------------------------------------------------------------
+def no_root_node():
+    """Error message when no nodes with prev_id == None."""
+    raise ValueError("No root node.")
+# --------------------------------------------------------------------------- #
+
 
 # multiple_root_node ----------------------------------------------------------
 def multiple_root_node():
@@ -34,6 +53,13 @@ def no_node_id(id):
 # --------------------------------------------------------------------------- #
 
 
+# node_not_solved -------------------------------------------------------------
+def node_not_solved(id):
+    """Error message when node is not solved."""
+    raise ValueError("Node '{}' id is not solved.".format(id))
+# --------------------------------------------------------------------------- #
+
+
 # -----------------------
 # Problem
 # -----------------------
@@ -50,4 +76,14 @@ def funtion_not_found(filename, function):
 def file_not_found(filename):
     """Error message when file not found."""
     raise IOError("File '{}' not found.".format(filename))
+# --------------------------------------------------------------------------- #
+
+
+# infeasible_problem ----------------------------------------------------------
+def infeasible_problem(problem_info=None):
+    """Error message when the problem is infeasible."""
+    if problem_info:
+        raise ValueError('Infeasible {} problem.'.format(problem_info))
+    else:
+        raise ValueError('Infeasible problem.')
 # --------------------------------------------------------------------------- #
