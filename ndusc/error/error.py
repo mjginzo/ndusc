@@ -3,6 +3,18 @@
 
 
 # -----------------------
+# Nested Decomposition
+# -----------------------
+
+# parameter_problem_type ------------------------------------------------------
+def parameter_problem_type(problem_type):
+    """Error message when unknown problem_type parameter."""
+    raise ValueError(("Unknown problem_type parameter: {}."
+                     "\nAllowed options: 'continuous' or 'binary'."
+                      ).format(problem_type))
+
+
+# -----------------------
 # Trees
 # -----------------------
 
@@ -41,6 +53,13 @@ def no_node_id(id):
 # --------------------------------------------------------------------------- #
 
 
+# node_not_solved -------------------------------------------------------------
+def node_not_solved(id):
+    """Error message when node is not solved."""
+    raise ValueError("Node '{}' id is not solved.".format(id))
+# --------------------------------------------------------------------------- #
+
+
 # -----------------------
 # Problem
 # -----------------------
@@ -61,7 +80,10 @@ def file_not_found(filename):
 
 
 # infeasible_problem ----------------------------------------------------------
-def infeasible_problem():
+def infeasible_problem(problem_info=None):
     """Error message when the problem is infeasible."""
-    raise ValueError('Infeasible problem.')
+    if problem_info:
+        raise ValueError('Infeasible {} problem.'.format(problem_info))
+    else:
+        raise ValueError('Infeasible problem.')
 # --------------------------------------------------------------------------- #

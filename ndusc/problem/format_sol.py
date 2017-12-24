@@ -6,18 +6,20 @@ import pyomo.environ as _pyenv
 import logging as _log
 
 # Package modules
-import ndusc.problem.integer_utils as _integer_utils
 import ndusc.error.error as _error
 
 
-# get_solution_info -----------------------------------------------------------
-def get_solution_info(problem, solver_results, solver,
-                      info=['variables', 'objective', 'solver_info', 'duals']):
+# get_sol_info ----------------------------------------------------------------
+def get_sol_info(results, problem, solver_results, solver,
+                 info=['variables', 'objective', 'solver_info',
+                       'duals']
+                 ):
     """Get solution.
 
     Get solution of pyomo concrete model.
 
     Args:
+        results (:obj:`dict`): initialization of the results dictionary.
         problem (:obj:`ndusc.problem.problem.Problem`): mathematical problem.
         solver_results (:obj:`dict`): solver result.
         solver (:obj:`str`): solver name.
@@ -29,11 +31,8 @@ def get_solution_info(problem, solver_results, solver,
     Return:
         :obj:`dict`: solution.
     """
-    # Results
-    results = {}
-
     # Get objective function value
-    if 'obj' in info:
+    if 'objective' in info:
         results['objective'] = get_objective_info(problem)
 
     # Get variables value
@@ -85,9 +84,11 @@ def get_objective_info(problem):
     """
     results = {}
     for o in problem.component_objects(_pyenv.Objective, active=True):
-        results[o.getname()] = {}
+        o_name = o.getname()
+        results[o_name] = {}
         oobject = getattr(problem, str(o))
-        results[o.getname()]['value'] = oobject()
+        for index in oobject:
+            results[o_name]['value'] = oobject[index]()
 
     return results
 # --------------------------------------------------------------------------- #
@@ -145,31 +146,17 @@ def get_duals_info(problem, solver='gurobi'):
     Return:
         :obj:`dict`: results information.
     """
-    # Create a solver
-    opt = _pyenv.SolverFactory(solver)
-
-    # Relax problem
-    int_vars = _integer_utils.get_integer_vars(problem)
-    _integer_utils.change_vars_domain(problem, int_vars, 'RealSet')
-
-    # Ask for dual information
+    # If no dual information solve the relaxed problem
     if not hasattr(problem, 'dual'):
-        problem.del_component('dual')
-    problem.dual = _pyenv.Suffix(direction=_pyenv.Suffix.IMPORT)
-
-    # Create a model instance and optimize
-    solver_results = opt.solve(problem)
-
-    # Unrelax problem
-    _integer_utils.change_vars_domain(problem, int_vars, 'IntegerSet')
+        problem, solver_results = problem.solve(solver, relaxed=True)
 
     # Obtain results
     status = str(solver_results['Solver'][0]['Termination condition'])
-    _log.debug('Status of the relaxed problem: ' + status)
+    _log.debug('\t\t* Status of the relaxed problem: ' + status)
 
     if status == 'optimal':
         get_duals = True
         return get_constraints_info(problem, get_duals)
     else:
-        _error.infeasible_problem()
+        _error.infeasible_problem("'relaxed'")
 # --------------------------------------------------------------------------- #

@@ -8,6 +8,22 @@ Todo: Check functions.
 import pyomo.environ as _pyenv
 
 
+# relax -----------------------------------------------------------------------
+def relax(problem):
+    """Relax the integer variables.
+
+    Change domain of all integer variables to the Real set insted of Integer
+    set.
+
+    Args:
+        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+            pyomo.
+    """
+    integer_vars = get_integer_vars(problem)
+    change_vars_domain(problem, integer_vars, 'RealSet')
+# --------------------------------------------------------------------------- #
+
+
 # change_vars_domain ----------------------------------------------------------
 def change_vars_domain(problem, vars, new_domain):
     """Relax or unrelax integer variables.

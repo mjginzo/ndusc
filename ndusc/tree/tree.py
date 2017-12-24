@@ -7,7 +7,7 @@ import jmespath as _jmp
 # Package modules
 import ndusc.node.node as _node
 import ndusc.tree.search as _search
-import ndusc.utilities as _utilities
+import ndusc.tree.utilities as _utilities
 import ndusc.error.error as _error
 import ndusc.problem.problem as _problem
 import ndusc.cut.cut as _cut
@@ -286,6 +286,35 @@ class Tree(object):
     # PROBLEM INFO
     # ================
 
+    # get_share_vars ----------------------------------------------------------
+    def get_share_vars(self, id):
+        """Get data information from the node.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`dict`: problem data.
+        """
+        id_vars_info = self.get_node_variables_info(id)
+        id_vars = {v: [i for i in id_vars_info[v].keys()]
+                   for v in id_vars_info.keys()}
+
+        for v in list(id_vars):
+            for i in id_vars[v]:
+                for n in self.get_next_nodes_id(id):
+                    n_vars = self.get_node_variables_info(n)
+                    if v not in list(n_vars):
+                        id_vars.pop(v, None)
+                        break
+                    else:
+                        if i not in list(n_vars[v]):
+                            id_vars[v].remove(i)
+                            break
+
+        return {v: id_vars[v] for v in id_vars.keys() if len(id_vars[v]) > 0}
+    # ----------------------------------------------------------------------- #
+
     # get_node_data -----------------------------------------------------------
     def get_node_data(self, id):
         """Get data information from the node.
@@ -368,23 +397,125 @@ class Tree(object):
     # ================
 
     # add_cuts ----------------------------------------------------------------
-    def add_cuts(self, id):
+    def add_cuts(self, id, bin_cuts=False, L=0.0):
         """Add new cuts to node id if problems where solved.
 
         Args:
             id (:obj:`str` or :obj:`int`): node id.
+            bin_cuts (:obj:`bool`, opt): ``True`` if binary cuts are desired.
+            L (:obj:`float`, opt): lower bound for the expected value. It may
+                obtained by solving the relaxed integer problem. Defaults to
+                ``0.0``.
+        """
+        # Node
+        node = self.get_node(id=id, copy=False)
+
+        # Cuts intialization
+        if 'cuts' not in node.keys():
+            node['cuts'] = _cut.Cut()
+
+        # Next nodes ids
+        next_nodes = self.get_next_nodes_id(id)
+
+        # Get infeasible nodes
+        infeas_nodes = self.get_infeasible_nodes_id(next_nodes)
+
+        # Necessary cuts information
+        vars = self.get_share_vars(id)
+
+        # Continuous cuts (always)
+
+        # Optimality cuts
+        if len(infeas_nodes) == 0:
+            dual = self.get_duals_info(next_nodes)
+            cons = self.get_constraints_info(next_nodes)
+            probs = {n: self.get_node(n)['probability']
+                     for n in next_nodes}
+            node['cuts'].add_opt(vars, dual, cons, probs)
+
+        # Feasible cuts
+        else:
+            dual = self.get_duals_info(next_nodes)
+            cons = self.get_constraints_info(next_nodes)
+            node['cuts'].add_feas(vars, dual, cons)
+
+        # Binary cuts
+        if bin_cuts:
+            # Take variable values
+            vars_val = node['solution']['variables']
+
+            # Optimality cuts
+            if len(infeas_nodes) == 0:
+                # Compute EV
+                values = _jmp.search('[*].solution.objective.*.*[][]',
+                                     self.get_nodes(id=next_nodes))
+                probs = _jmp.search('[*].probability',
+                                    self.get_nodes(id=next_nodes))
+                EV = sum([values[i]*probs[i]/sum(probs)
+                          for i in range(len(probs))])
+
+                #  Se calcula anteriormente, ha de ser un parametro de entrada
+                #  para el algoritmo (nested distance binaries)
+
+                node['cuts'].add_bin_opt(vars, vars_val, EV, L)
+
+            # Feasible cuts
+            else:
+                node['cuts'].add_bin_feas(vars, vars_val)
+    # ----------------------------------------------------------------------- #
+
+    # get_cuts ----------------------------------------------------------------
+    def get_cuts(self, id):
+        """Get cuts of the node.
+
+        Args:
+            id (:obj:`str` or :obj:`int`): node id.
+
+        Return:
+            :obj:`ndusc.cut.cut.Cut`: cuts information.
         """
         node = self.get_node(id=id, copy=False)
 
         if 'cuts' not in node.keys():
-            node['cuts'] = _cut.Cut()
+            return None
         else:
-            node['cuts']  # = _utilities.join_data(node['cuts'], )
+            return node['cuts']
     # ----------------------------------------------------------------------- #
 
     # ================
     # SOLUTION INFO
     # ================
+
+    # get_infeasible_nodes_id -------------------------------------------------
+    def get_infeasible_nodes_id(self, ids=None):
+        """Get the id of the infeasibles nodes.
+
+        Args:
+            ids (:obj:list): list of nodes ids. If None all nodes are consider.
+                Defaults to None.
+        """
+        if ids is None:
+            ids = self.get_nodes_id()
+
+        return [n for n in ids if self.is_infeasible_node(n)]
+    # ----------------------------------------------------------------------- #
+
+    # is_infeasible_node ------------------------------------------------------
+    def is_infeasible_node(self, id):
+        """Check if node has a infeasible solution.
+
+        Args:
+            id (:obj:`int` or :obj:`str`): node id.
+
+        Return:
+            :obj:`bool`: ``True`` if node is infeasible.
+        """
+        try:
+            sol = self.get_node(id)['solution']
+            return sol['status'] != 'optimal'
+        except KeyError:
+            raise _error.node_not_solved
+    # ----------------------------------------------------------------------- #
 
     # update_solution ---------------------------------------------------------
     def update_solution(self, id, solution):
@@ -459,21 +590,19 @@ class Tree(object):
             equal = []
             for n_id in self.get_next_nodes_id(id):
 
-                # If no solution key return False ---
-                try:
-                    n_vars = self.get_node_variables_info(n_id)
-                except KeyError:
+                # If no solution return False ---
+                n_vars = self.get_node_variables_info(n_id)
+                if n_vars is None:
                     return False
                 # ------------------------------------
 
                 for k in id_vars.keys():
-                    for i in id_vars[k].keys():
-                        try:
-                            equal += [id_vars[k][i] == n_vars[k][i]]
-                        except KeyError:
-                            pass
+                    if k in n_vars.keys():
+                        for i in id_vars[k].keys():
+                            if i in n_vars[k].keys():
+                                equal += [id_vars[k][i] == n_vars[k][i]]
             return all(equal)
         else:
-            return None
+            return False
     # ----------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #

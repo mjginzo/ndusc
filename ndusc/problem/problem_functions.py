@@ -7,7 +7,9 @@ import pyomo.environ as _pyenv
 import logging as _log
 
 # package modules
-from ndusc.problem import format_sol as _format_sol
+import ndusc.problem.format_sol as _format_sol
+import ndusc.problem.extrem_directions as _ex_dir
+import ndusc.problem.integer_utils as _int_u
 import ndusc.error.error as _error
 
 
@@ -84,11 +86,55 @@ def load_from_file(problem, problem_file, function, data):
 
 
 # solve -----------------------------------------------------------------------
-def solve(problem, solver='gurobi',
-          info=['variables', 'objective', 'solver_info', 'duals']):
+def solve(problem, solver='gurobi', relaxed=False):
     """Solve.
 
     Solve a given problem.
+
+    Args:
+        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of pyomo.
+        solver (:obj:`str`, opt): solver name. The disered solver must be in
+            the path. Defaults to ``'gurobi'``.
+        relaxed (:obj:`bool`, opt): if ``True`` solve problem relaxation.
+            Defaults to ``False``.
+
+    Return:
+        :obj:`tuple`: problem and solver results information.
+    """
+    # Create a solver
+    opt = _pyenv.SolverFactory(solver)
+
+    # Relax problem
+    if relaxed:
+        int_vars = _int_u.get_integer_vars(problem)
+        _int_u.change_vars_domain(problem, int_vars, 'RealSet')
+
+    # Create a model instance and optimize
+    solver_results = opt.solve(problem)
+
+    # Ask for dual information
+    if relaxed:
+        if not hasattr(problem, 'dual'):
+            problem.del_component('dual')
+        problem.dual = _pyenv.Suffix(direction=_pyenv.Suffix.IMPORT)
+
+    # Create a model instance and optimize
+    solver_results = opt.solve(problem)
+
+    # Unrelax problem
+    if relaxed:
+        _int_u.change_vars_domain(problem, int_vars, 'IntegerSet')
+
+    return problem, solver_results
+# --------------------------------------------------------------------------- #
+
+
+# solve_node ------------------------------------------------------------------
+def solve_node(problem, solver='gurobi',
+               info=['variables', 'objective', 'solver_info', 'duals']):
+    """Solve a node problem.
+
+    Solve a node of the nested decomposition algorithm.
 
     Args:
         problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of pyomo.
@@ -102,19 +148,25 @@ def solve(problem, solver='gurobi',
     Return:
         :obj:`dict`: results information.
     """
-    # Create a solver
-    opt = _pyenv.SolverFactory(solver)
-
-    # Create a model instance and optimize
-    solver_results = opt.solve(problem)
+    # Solve the problem
+    problem, solver_results = problem.solve(solver, relaxed=False)
 
     # Obtain results
     status = str(solver_results['Solver'][0]['Termination condition'])
-    _log.info('Status: ' + status)
+    results = {'status': status}
+
+    _log.debug('\t\t* Status of the node problem: ' + status)
     if status == 'optimal':
-        results = _format_sol.get_solution_info(problem, solver_results,
-                                                solver, info)
-        return results
+        return _format_sol.get_sol_info(results, problem, solver_results,
+                                        solver, info)
     else:
-        _error.infeasible_problem()
+        info = ['solver_info', 'duals']
+        _ex_dir.get_extr_direction_dual_problem(problem)
+        problem, solver_results = problem.solve(solver, relaxed=True)
+        new_status = str(solver_results['Solver'][0]['Termination condition'])
+        if new_status == 'optimal':
+            return _format_sol.get_sol_info(problem, solver_results, solver,
+                                            info)
+        else:
+            _error.infeasible_problem("'extreme directions'")
 # --------------------------------------------------------------------------- #

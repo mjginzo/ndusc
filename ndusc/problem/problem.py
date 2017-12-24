@@ -6,8 +6,9 @@ import pyomo.environ as _pyenv
 from pyomo.repn import collect
 
 # Package modules
-from ndusc.problem import problem_functions as _prob_func
-from ndusc.problem import cuts as _cuts
+import ndusc.problem.problem_functions as _prob_func
+import ndusc.problem.integer_utils as _int_u
+import ndusc.problem.cuts as _cuts
 
 
 # Problem ---------------------------------------------------------------------
@@ -88,18 +89,8 @@ class Problem(_pyenv.ConcreteModel):
         return collect.collect_linear_terms(self, [])[1]
     # ----------------------------------------------------------------------- #
 
-    # update_cuts -------------------------------------------------------------
-    def update_cuts(self, node):
-        """Update feasibility and optimality cuts.
-
-        Args:
-            node (:obj:`ndusc.node.Node`): tree node.
-        """
-        _cuts.update_cuts(self, node)
-    # ----------------------------------------------------------------------- #
-
     # solve -------------------------------------------------------------------
-    def solve(self, solver='gurobi', duals=True):
+    def solve(self, solver='gurobi', relaxed=False):
         """Solve.
 
         Solve the problem.
@@ -107,39 +98,65 @@ class Problem(_pyenv.ConcreteModel):
         Args:
             solver (:obj:`str`, opt): solver name. The disered solver must be
                 in the path. Defaults to ``'gurobi'``.
-            duals (:obj:`bool`, opt): if ``True`` return dual information.
-                Defaults to ``True``.
+            relaxed (:obj:`bool`, opt): if ``True`` solve problem relaxation.
+                Defaults to ``False``.
+
+        Return:
+            :obj:`tuple`: problem and solver results information.
+        """
+        return _prob_func.solve(self, solver, relaxed)
+    # ----------------------------------------------------------------------- #
+
+    # solve_node --------------------------------------------------------------
+    def solve_node(self, solver='gurobi', get_duals=False):
+        """Solve a node problem.
+
+        Solve a node of the nested decomposition algorithm.
+
+        Args:
+            solver (:obj:`str`, opt): solver name. The disered solver must be
+                in the path. Defaults to ``'gurobi'``.
+            get_duals (:obj:`bool`, opt): ``True`` to return dual information
+                of the relaxed problem.
 
         Return:
             :obj:`dict`: results information.
         """
-        if duals:
+        if get_duals:
             info = ['variables', 'objective', 'solver_info', 'duals']
         else:
             info = ['variables', 'objective', 'solver_info']
-        return _prob_func.solve(self, solver, info)
+        return _prob_func.solve_node(self, solver, info)
     # ----------------------------------------------------------------------- #
 
-    # create_feas_cuts --------------------------------------------------------
-    def create_feas_cuts(self, feas_cuts):
-        """Create feasibility cuts.
+    # create_cuts -------------------------------------------------------------
+    def create_cuts(self, cuts):
+        """Create cuts.
 
         Args:
-            feas_cuts (:obj:`dict`): feasibility cuts of the current node.
+            cuts (:obj:`ndusc.cut.cut.Cut`): cuts information.
         """
-        if hasattr(self, '_feas_cuts'):
-            _cuts.update_feas_cuts(self, feas_cuts)
-        else:
+        if 'opt' in cuts.keys():
+            opt_cuts = cuts['opt']
+            _cuts.create_opt_cuts(self, opt_cuts)
+        if 'feas' in cuts.keys():
+            feas_cuts = cuts['feas']
             _cuts.create_feas_cuts(self, feas_cuts)
+        if 'bin_opt' in cuts.keys():
+            bin_opt_cuts = cuts['bin_opt']
+            _cuts.create_bin_opt_cuts(self, bin_opt_cuts)
+        if 'bin_feas' in cuts.keys():
+            bin_feas_cuts = cuts['bin_feas']
+            _cuts.create_bin_feas_cuts(self, bin_feas_cuts)
     # ----------------------------------------------------------------------- #
 
-    # create_opt_cuts ---------------------------------------------------------
-    def create_opt_cuts(self, opt_cuts):
-        """Create optimality cuts.
+    # relax -------------------------------------------------------------------
+    def relax(self):
+        """Relax the integer variables.
 
-        Args:
-            opt_cuts (:obj:`dict`): optimality cuts of the current node.
+        Change domain of all integer variables to the Real set insted of
+        Integer set.
         """
-        _cuts.create_opt_cuts(self, opt_cuts)
+        _int_u.relax(self)
     # ----------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #
