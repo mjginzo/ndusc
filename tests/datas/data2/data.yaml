@@ -7,10 +7,16 @@ sets:
         - Maquina_I
         - Maquina_II
         - Maquina_III
+    Periods:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
 params:
-    NumPer: 6
-    C: 
-        Dozer: 175 
+    C:
+        Dozer: 175
         Tractor: 150
         Grupo_I: 125
         Grupo_II: 175
@@ -18,7 +24,7 @@ params:
         Maquina_II: 100
         Maquina_III: 125
     P:
-        Dozer: 300 
+        Dozer: 300
         Tractor: 500
         Grupo_I: 500
         Grupo_II: 600
@@ -33,19 +39,18 @@ params:
         Maquina_I: 1.5
         Maquina_II: 1.5
         Maquina_III: 1
-    PR: 
-        Dozer: 0.36 
+    PR:
+        Dozer: 0.36
         Tractor: 0.45
         Grupo_I: 0.20
         Grupo_II: 0.25
         Maquina_I: 0.09
         Maquina_II: 0.1
         Maquina_III: 0.15
-    H: 
-        1: 1 
-        2: 2 
-        3: 3 
+    H:
+        1: 1
+        2: 2
+        3: 3
         4: 4
         5: 5
         6: 6
-            

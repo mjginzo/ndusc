@@ -1,42 +1,36 @@
-"""First stage model of the stochastic problem from the thesis of Lee."""
-#
-# Imports
-#
+# -*- coding: utf-8 -*-
+"""Example 2 taken from the Thesis of Lee."""
+
+# Python packages
+from pyomo import environ
 
 
-def model_S1(model, data):
-    """."""
-    import pyomo.environ as pyenv
-    #
-    # Model
-    #
+# model_S1 --------------------------------------------------------------------
+def model_S1(m, data):
+    """First stage model."""
+    # ------------
+    # Definitions
+    # ------------
 
-    #
     # Sets
-    #
+    m.current_stage = environ.Set(initialize=[1])
+    m.Resources = environ.Set(initialize=data['sets']['Resources'])
 
-    model.Resources = pyenv.Set(initialize=data['sets']['Resources'])
-
-    #
     # Parameters
-    #
+    m.P = environ.Param(m.Resources,
+                        initialize=data['params']['P'],
+                        within=environ.PositiveReals)
 
-    model.P = pyenv.Param(model.Resources,
-                          initialize=data['params']['P'],
-                          within=pyenv.PositiveReals)
-
-    #
     # Variables
-    #
+    m.Z = environ.Var(m.current_stage, m.Resources, within=environ.Binary)
 
-    model.Z = pyenv.Var(model.Resources, within=pyenv.Binary)
-
-    #
+    # ------------
     # Objective
-    #
+    # ------------
 
-    def Obj_rule(self):
-        """."""
-        return sum(model.P[i]*model.Z[i] for i in model.Resources)
+    def Obj_rule(m, s):
+        return sum(m.P[i]*m.Z[s, i] for i in m.Resources)
 
-    model.Obj = pyenv.Objective(rule=Obj_rule, sense=pyenv.minimize)
+    m.Obj = environ.Objective(m.current_stage, rule=Obj_rule,
+                              sense=environ.minimize)
+# --------------------------------------------------------------------------- #
