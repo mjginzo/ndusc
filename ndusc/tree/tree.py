@@ -192,7 +192,7 @@ class Tree(object):
             :obj:`str` or :obj:`int`: previous node id.
         """
         prev_id = self.get_previous_node_id(id)
-        return self.get_node_variables_info(prev_id)
+        return self.get_node(prev_id).get_variables_info()
     # ----------------------------------------------------------------------- #
 
     # get_next_nodes_id -------------------------------------------------------
@@ -296,14 +296,14 @@ class Tree(object):
         Return:
             :obj:`dict`: problem data.
         """
-        id_vars_info = self.get_node_variables_info(id)
+        id_vars_info = self.get_node(id).get_variables_info()
         id_vars = {v: [i for i in id_vars_info[v].keys()]
                    for v in id_vars_info.keys()}
 
         for v in list(id_vars):
             for i in id_vars[v]:
                 for n in self.get_next_nodes_id(id):
-                    n_vars = self.get_node_variables_info(n)
+                    n_vars = self.get_node(n).get_variables_info()
                     if v not in list(n_vars):
                         id_vars.pop(v, None)
                         break
@@ -464,24 +464,6 @@ class Tree(object):
                 node['cuts'].add_bin_feas(vars, vars_val)
     # ----------------------------------------------------------------------- #
 
-    # get_cuts ----------------------------------------------------------------
-    def get_cuts(self, id):
-        """Get cuts of the node.
-
-        Args:
-            id (:obj:`str` or :obj:`int`): node id.
-
-        Return:
-            :obj:`ndusc.cut.cut.Cut`: cuts information.
-        """
-        node = self.get_node(id=id, copy=False)
-
-        if 'cuts' not in node.keys():
-            return None
-        else:
-            return node['cuts']
-    # ----------------------------------------------------------------------- #
-
     # ================
     # SOLUTION INFO
     # ================
@@ -497,52 +479,7 @@ class Tree(object):
         if ids is None:
             ids = self.get_nodes_id()
 
-        return [n for n in ids if self.is_infeasible_node(n)]
-    # ----------------------------------------------------------------------- #
-
-    # is_infeasible_node ------------------------------------------------------
-    def is_infeasible_node(self, id):
-        """Check if node has a infeasible solution.
-
-        Args:
-            id (:obj:`int` or :obj:`str`): node id.
-
-        Return:
-            :obj:`bool`: ``True`` if node is infeasible.
-        """
-        try:
-            sol = self.get_node(id)['solution']
-            return sol['status'] != 'optimal'
-        except KeyError:
-            raise _error.node_not_solved
-    # ----------------------------------------------------------------------- #
-
-    # update_solution ---------------------------------------------------------
-    def update_solution(self, id, solution):
-        """Update node solution.
-
-        Args:
-            id (:obj:`str` or :obj:`int`): node id.
-            solution (:obj:`dict`): solution information.
-        """
-        node = self.get_node(id=id, copy=False)
-        node['solution'] = solution
-    # ----------------------------------------------------------------------- #
-
-    # get_node_variables_info -------------------------------------------------
-    def get_node_variables_info(self, id):
-        """Get variable information of node.
-
-        Args:
-            id (:obj:`str` or :obj:`int`): node id.
-
-        Return:
-            :obj:`dict`: variables information.
-        """
-        try:
-            return self.get_node(id=id)['solution']['variables']
-        except KeyError:
-            return None
+        return [n for n in ids if self.get_node(n).is_infeasible()]
     # ----------------------------------------------------------------------- #
 
     # get_duals_info ----------------------------------------------------------
@@ -555,24 +492,7 @@ class Tree(object):
         Return:
             :obj:`dict`: dual information.
         """
-        return {i: self._get_node_duals_info(i) for i in ids}
-    # ----------------------------------------------------------------------- #
-
-    # _get_node_duals_info ----------------------------------------------------
-    def _get_node_duals_info(self, id):
-        """Get node dual information.
-
-        Args:
-            id (:obj:`str` or :obj:`int`): node id.
-
-        Return:
-            :obj:`dict`: dual information.
-        """
-        try:
-            cons = self.get_node(id=id)['solution']['constraints']
-            return {c: {i: cons[c][i]['dual']} for c in cons for i in cons[c]}
-        except KeyError:
-            return None
+        return {i: self.get_node(i).get_duals_info() for i in ids}
     # ----------------------------------------------------------------------- #
 
     # has_next_nodes_eq_sol ---------------------------------------------------
@@ -585,13 +505,13 @@ class Tree(object):
         Return:
             :obj:`bool`: true if the variable solution is the same.
         """
-        id_vars = self.get_node_variables_info(id)
+        id_vars = self.get_node(id).get_variables_info()
         if id_vars is not None:
             equal = []
             for n_id in self.get_next_nodes_id(id):
 
                 # If no solution return False ---
-                n_vars = self.get_node_variables_info(n_id)
+                n_vars = self.get_node(n_id).get_variables_info()
                 if n_vars is None:
                     return False
                 # ------------------------------------

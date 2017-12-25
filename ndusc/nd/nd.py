@@ -98,7 +98,8 @@ def nested_decomposition(tree_dic, data_dic,
             # --------------------
             # Add cuts
             # --------------------
-            cuts = tree.get_cuts(node_id)
+            node = tree.get_node(node_id, copy=False)
+            cuts = node.get_cuts()
             if cuts is not None:
                 problem.create_cuts(cuts)
 
@@ -120,7 +121,7 @@ def nested_decomposition(tree_dic, data_dic,
             # --------------------
             _log.info("\t* Update node solution")
             _logger.vars_format(solution['variables'])
-            tree.update_solution(node_id, solution)
+            node.update_solution(solution)
             _log.info('')
         stopcontion = True
 
