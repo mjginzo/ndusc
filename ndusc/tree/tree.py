@@ -31,11 +31,22 @@ class Tree(object):
             >>> data = input_module.input_module_example()
             >>> tree = Tree(data.load_tree(), data.load_data())
         """
-        self.__nodes = [_node.Node(n) for n in tree_dic['nodes']]
+        self.__nodes = [_node.Node(**n) for n in tree_dic['nodes']]
         self.__stages = sorted(list(set(_jmp.search("[*].stage",
                                         self.__nodes))))
         self.__general_data = data_dic
         self._add_constraints_info()
+        self.__problem_type = self._get_problem_type()
+    # ----------------------------------------------------------------------- #
+
+    # ================
+    # PROBLEM TYPE
+    # ================
+
+    # problem_type ------------------------------------------------------------
+    def problem_type(self):
+        """Get problem type."""
+        return self.__problem_type
     # ----------------------------------------------------------------------- #
 
     # ================
@@ -379,17 +390,31 @@ class Tree(object):
 
     # _add_constraints_info ---------------------------------------------------
     def _add_constraints_info(self):
-        """Add constrains information for each node.
-
-        Return:
-            :obj:`dict`: problem data.
-        """
+        """Add constrains information for each node."""
         for node in self.get_nodes():
             prob_info = self.get_node_problem_info(node['id'])
             problem = _problem.Problem()
             problem.load_from_file(**prob_info)
             node['problem_info'] = {'A': problem.get_constrain_coeffs(),
                                     'rhs': problem.get_rhs()}
+    # ----------------------------------------------------------------------- #
+
+    # _get_problem_type ---------------------------------------------------
+    def _get_problem_type(self):
+        """Get problem type.
+
+        Return:
+            :obj:`str`: problem type.
+        """
+        prob_type = 'continuous'
+        for node in self.get_nodes():
+            prob_info = self.get_node_problem_info(node['id'])
+            problem = _problem.Problem()
+            problem.load_from_file(**prob_info)
+            new_type = problem.problem_type()
+            if new_type == 'integer':
+                prob_type = new_type
+        return prob_type
     # ----------------------------------------------------------------------- #
 
     # ================
