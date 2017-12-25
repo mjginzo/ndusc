@@ -16,7 +16,6 @@ class Node(dict):
     def __init__(self, *arg, **kw):
         """Initialization."""
         super(Node, self).__init__(*arg, **kw)
-    # ----------------------------------------------------------------------- #
 
     # get_file ----------------------------------------------------------------
     def get_file(self):
@@ -99,6 +98,6 @@ class Node(dict):
         try:
             return self['solution']['variables']
         except KeyError:
-            raise _error.no_solution(self['id'])
+            return None
     # ----------------------------------------------------------------------- #
 # --------------------------------------------------------------------------- #

@@ -4,20 +4,17 @@
 import logging as _log
 
 # Package modules
-import ndusc.tree.tree as _tree
 import ndusc.problem.problem as _problem
-import ndusc.error.error as _error
 import ndusc.logger.logger as _logger
+import ndusc.queues_nodes.queues as _queues
 
 
-# nested_decomposition --------------------------------------------------------
-def nested_decomposition(tree_dic, data_dic,
-                         solver='gurobi', problem_type='continuous', L=None):
+# nd --------------------------------------------------------------------------
+def nd(tree, solver='gurobi', problem_type='continuous', L=None):
     """Nested decomposition algorithm.
 
     Args:
-        tree_dic (:obj:`dict`): tree with node information.
-        data_dic (:obj:`dict`): general data.
+        tree (:obj:`ndusc.tree.tree.Tree`): tree information.
         solver (:obj:`str`, opt): solver name. Defaults to ``'gurobi'``.
         problem_type (:obj:`str`, opt): problem type. Options:
             ``'continuous'``, ``'binary'``. Defaults to ``'continuous'``.
@@ -39,9 +36,16 @@ def nested_decomposition(tree_dic, data_dic,
     """
     # INICIO METODO
     #
-    _log.info("\nINFO: STARTING ND ALGORTITHM\n")
-    iteration, tree, bin_cuts, L, LB, UB = params_init(tree_dic, data_dic, L,
-                                                       problem_type)
+    _log.info("STARTING ND ALGORTITHM")
+
+    LB = -float('inf')
+    UB = -float('inf')
+    iteration = 0
+
+    if problem_type == 'continuous':
+        bin_cuts = False
+    else:
+        bin_cuts = True
 
     # Seleccionar la lista inicial de nodos a visitar ---------
     # nodes_id = tree.get_nodes_info(stage=stage, keys='id')
@@ -123,28 +127,9 @@ def nested_decomposition(tree_dic, data_dic,
             _logger.vars_format(solution['variables'])
             node.update_solution(solution)
             _log.info('')
+
+            # nodes_id = _queues.method1()
         stopcontion = True
 
     return tree
-# --------------------------------------------------------------------------- #
-
-
-# params_init -----------------------------------------------------------------
-def params_init(tree_dic, data_dic, L, problem_type):
-    """Parameter initializtion."""
-    if problem_type == 'continuous':
-        bin_cuts = False
-    elif problem_type == 'binary':
-        if L is None:
-            L = 0.0
-        bin_cuts = True
-    else:
-        _error.parameter_problem_type()
-
-    LB = -float('inf')
-    UB = -float('inf')
-
-    iteration = 0
-    tree = _tree.Tree(tree_dic, data_dic)
-    return iteration, tree, bin_cuts, L, LB, UB
 # --------------------------------------------------------------------------- #
