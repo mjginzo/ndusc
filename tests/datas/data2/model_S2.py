@@ -1,116 +1,109 @@
-#  _________________________________________________________________________
-#
-#  Example: stochastic problem from the thesis of Lee.
-#  Second stage model.
-#  _________________________________________________________________________
+# -*- coding: utf-8 -*-
+"""Example 2 taken from the Thesis of Lee."""
 
-#
-# Imports
-#
-
-from pyomo.environ import *
+# Python packages
+from pyomo import environ
 
 
-def model_S2(data):
-    #
-    # Model
-    #
+# model_S2 --------------------------------------------------------------------
+def model_S2(m, data):
+    """Second stage model."""
+    # ------------
+    # Definitions
+    # ------------
 
-    model = ConcreteModel()
-
-    #
     # Sets
-    #
+    m.prev_stage = environ.Set(initialize=[1])
+    m.current_stage = environ.Set(initialize=[2])
+    m.Resources = environ.Set(initialize=data['sets']['Resources'])
+    m.Periods = environ.Set(initialize=data['sets']['Periods'])
 
-    model.Resources = Set(initialize=data['sets']['Resources'])
-
-    model.NumPer = Param(initialize=data['params']['NumPer'], within=Integers)
-
-    def Periods_rule(model):
-        return set(range(1, model.NumPer()+1))
-
-    model.Periods = Set(initialize=Periods_rule)
-
-    #
     # Parameters
-    #
+    m.C = environ.Param(m.Resources,
+                        initialize=data['params']['C'],
+                        within=environ.PositiveReals)
+    m.A = environ.Param(m.Resources,
+                        initialize=data['params']['A'],
+                        within=environ.PositiveReals)
+    m.PR = environ.Param(m.Resources, initialize=data['params']['PR'],
+                         within=environ.PositiveReals)
+    m.H = environ.Param(m.Periods,
+                        initialize=data['params']['H'],
+                        within=environ.PositiveReals)
+    m.NVC = environ.Param(m.current_stage, m.Periods,
+                          initialize=data['params']['NVC'],
+                          within=environ.PositiveReals)
+    m.SP = environ.Param(m.current_stage, m.Periods,
+                         initialize=data['params']['SP'],
+                         within=environ.PositiveReals)
 
-    model.C = Param(model.Resources, initialize=data['params']['C'], within=PositiveReals)
-
-    model.A = Param(model.Resources, initialize=data['params']['A'], within=PositiveReals)
-
-    model.PR = Param(model.Resources, initialize=data['params']['PR'], within=PositiveReals)
-
-    model.H = Param(model.Periods, initialize=data['params']['H'], within=PositiveReals)
-
-    model.NVC = Param(model.Periods, initialize=data['params']['NVC'], within=PositiveReals)
-
-    model.SP = Param(model.Periods, initialize=data['params']['SP'], within=PositiveReals)
-
-    def PER_init(model, p):
+    def PER_init(m, s, p):
+        """Perimeter initialization."""
         if p == 1:
-            return model.SP[p]
+            return m.SP[s, p]
         else:
-            return model.SP[p]-model.SP[p-1]
-
-    model.PER = Param(model.Periods, initialize=PER_init, within=PositiveReals)
+            return m.SP[s, p]-m.SP[s, p-1]
+    m.PER = environ.Param(m.current_stage, m.Periods, initialize=PER_init,
+                          within=environ.PositiveReals)
 
     def M_init(model):
-        return max(model.SP)
+        return max([model.SP[s, p]
+                    for s in m.current_stage for p in m.Periods])
+    m.M = environ.Param(initialize=M_init, within=environ.PositiveReals)
 
-    model.M = Param(initialize=M_init ,within=PositiveReals)
-
-    model.Z = Param(model.Resources, initialize=data['params']['Z'])
-
-    #
     # Variables
-    #
+    m.Z = environ.Var(m.prev_stage, m.Resources, within=environ.Binary)
+    m.D = environ.Var(m.current_stage, m.Resources, m.Periods,
+                      within=environ.Binary)
+    m.Y = environ.Var(m.current_stage, m.Periods, within=environ.Binary,
+                      doc='1 if the wildfire is not content')
 
-    model.D = Var(model.Resources, model.Periods, within=Binary)
-
-    model.Y = Var(model.Periods, within=Binary, doc='1 if the wildfire is not content')
-
-    #
+    # ------------
     # Objective
-    #
+    # ------------
 
-    def Obj_rule(model):
-        return sum(model.C[i]*model.H[j]*model.D[i,j]
-                    for i in model.Resources for j in model.Periods) \
-                + model.NVC[1] + sum(model.NVC[j]*model.Y[j-1]
-                    for j in model.Periods if j > 1)\
-                + model.Y[model.NumPer]
-    model.Obj = Objective(rule=Obj_rule, sense=minimize)
+    def Obj_rule(m, s):
+        return sum(m.C[i]*m.H[j]*m.D[s, i, j]
+                   for i in m.Resources for j in m.Periods) \
+                + m.NVC[s, 1] + sum(m.NVC[s, j]*m.Y[s, j-1]
+                                    for j in m.Periods if j > 1)\
+                + m.Y[s, max(m.Periods)]
+    m.Obj = environ.Objective(m.current_stage, rule=Obj_rule,
+                              sense=environ.minimize)
 
-    #
+    # ------------
     # Constraints
-    #
+    # ------------
 
-    def end_contention_rule(model):
-        return sum((model.H[j]-model.A[i])*model.PR[i]*model.D[i,j] 
-                    for i in model.Resources for j in model.Periods) \
+    # end contention
+    def end_contention_rule(m, s):
+        return sum((m.H[j]-m.A[i])*m.PR[i]*m.D[s, i, j]
+                   for i in m.Resources for j in m.Periods) \
                 >= \
-                model.PER[1] \
-                + sum(model.PER[j]*model.Y[j-1] for j in model.Periods if j > 1)
+                m.PER[s, 1] + sum(m.PER[s, j]*m.Y[s, j-1]
+                                  for j in m.Periods if j > 1)
 
-    model.end_contention = Constraint(rule=end_contention_rule)
+    m.end_contention = environ.Constraint(m.current_stage,
+                                          rule=end_contention_rule)
 
-    def selection_rule(model, i):
-        return sum(model.D[i,j] for j in model.Periods) <= model.Z[i]
+    # aircraft selection
+    def selection_rule(m, s, i):
+        return sum(m.D[s, i, j] for j in m.Periods) <= m.Z[s-1, i]
+    m.selection = environ.Constraint(m.current_stage, m.Resources,
+                                     rule=selection_rule)
 
-    model.selection = Constraint(model.Resources, rule=selection_rule)
-
-    def contention_rule(model, j):
+    # contention
+    def contention_rule(m, s, j):
         if j > 1:
-            return model.SP[j]*model.Y[j-1] \
-            -sum((model.H[j]-model.A[i])*model.PR[i]*model.D[i,j] 
-                    for i in model.Resources) \
-                <= model.M*model.Y[j]
+            return m.SP[s, j]*m.Y[s, j-1] -\
+                   sum((m.H[j]-m.A[i])*m.PR[i]*m.D[s, i, j]
+                       for i in m.Resources) <= m.M*m.Y[s, j]
         else:
-            return model.SP[j] \
-            -sum((model.H[j]-model.A[i])*model.PR[i]*model.D[i,j] 
-                    for i in model.Resources) \
-                <= model.M*model.Y[j]
+            return m.SP[s, j] \
+                   - sum((m.H[j]-m.A[i])*m.PR[i]*m.D[s, i, j]
+                         for i in m.Resources) \
+                   <= m.M*m.Y[s, j]
 
-    model.contention = Constraint(model.Periods, rule=contention_rule)
-    return model
+    m.contention = environ.Constraint(m.current_stage, m.Periods,
+                                      rule=contention_rule)
+# --------------------------------------------------------------------------- #

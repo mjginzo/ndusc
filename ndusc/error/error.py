@@ -53,10 +53,21 @@ def no_node_id(id):
 # --------------------------------------------------------------------------- #
 
 
-# node_not_solved -------------------------------------------------------------
-def node_not_solved(id):
+# -----------------------
+# Node
+# -----------------------
+
+# no_solved -------------------------------------------------------------------
+def no_solved(id):
     """Error message when node is not solved."""
     raise ValueError("Node '{}' id is not solved.".format(id))
+# --------------------------------------------------------------------------- #
+
+
+# no_solution -----------------------------------------------------------------
+def no_solution(id):
+    """Error message when node has not a solution."""
+    raise ValueError("Node '{}' id has not a solution.".format(id))
 # --------------------------------------------------------------------------- #
 
 

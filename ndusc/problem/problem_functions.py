@@ -170,3 +170,26 @@ def solve_node(problem, solver='gurobi',
         else:
             _error.infeasible_problem("'extreme directions'")
 # --------------------------------------------------------------------------- #
+
+
+# problem_type ----------------------------------------------------------------
+def problem_type(problem):
+    """Get problem type.
+
+    Args:
+        problem (:obj:`pyomo.environ.ConcreteModel`): concrete model of
+            pyomo.
+    Return:
+        :obj:`str`: more restricted problem type.
+    """
+    prob_type = 'continuous'
+    for v in problem.component_objects(_pyenv.Var, active=True):
+        for i in getattr(problem, str(v)):
+                if hasattr(v[i], 'domain_type'):
+                    if str(v[i].domain_type) == "IntegerSet":
+                        prob_type = 'integer'
+                elif hasattr(v[i], 'domain'):
+                    if str(v[i].domain) in ["Integer", "Binary"]:
+                        prob_type = 'integer'
+    return prob_type
+# --------------------------------------------------------------------------- #

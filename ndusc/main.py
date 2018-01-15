@@ -11,7 +11,7 @@ import argparse as _arg
 # Package modules
 import ndusc.logger.logger as _log
 import ndusc.input.input_module as _im
-import ndusc.nd.nd as _nd
+import ndusc.nd.ndusc as _ndusc
 
 
 # parse_args ------------------------------------------------------------------
@@ -23,8 +23,8 @@ def parse_args():
     # general parser and info
     parser = _arg.ArgumentParser(
         prog='ndusc',
-        description="""Nested decomposition algorithm - USantiagoCompostela
-        implementation.""",
+        description="""Nested decomposition algorithm. Implementation made by
+        researchers of the Santiago de Compostela University.""",
         formatter_class=_arg.ArgumentDefaultsHelpFormatter
         )
 
@@ -95,11 +95,6 @@ def main():
     tree_dic = data.load_tree()
     data_dic = data.load_data()
 
-    # Problem type
-    problem_type = 'continuous'
-
     # Nested decomposition
-    L = None
-    print(_nd.nested_decomposition(tree_dic, data_dic, solver,
-                                   problem_type, L))
+    print(_ndusc.ndusc(tree_dic, data_dic, solver))
 # --------------------------------------------------------------------------- #
