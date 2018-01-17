@@ -7,15 +7,15 @@ import logging as _log
 import ndusc.problem.problem as _problem
 import ndusc.logger.logger as _logger
 import ndusc.queues_nodes.queues as _queues
-
+from timeit import default_timer as timer
 
 # nd --------------------------------------------------------------------------
-def nd(tree, solver='gurobi', problem_type='continuous', L=None):
+def nd(tree, config, problem_type='continuous', L=None):
     """Nested decomposition algorithm.
 
     Args:
         tree (:obj:`ndusc.tree.tree.Tree`): tree information.
-        solver (:obj:`str`, opt): solver name. Defaults to ``'gurobi'``.
+        config (:obj:`configure`): configuration struct.
         problem_type (:obj:`str`, opt): problem type. Options:
             ``'continuous'``, ``'binary'``. Defaults to ``'continuous'``.
         L (:obj:`float`): lower bound for the binary problem.
@@ -26,13 +26,14 @@ def nd(tree, solver='gurobi', problem_type='continuous', L=None):
     Example:
         >>> from ndusc.examples import input_module
         >>> from ndusc.nd import nested_decomposition
+        >>> import ndusc.nd.configuration as _config
         >>> data = input_module.input_module_example()
         >>> tree_dic = data.load_tree()
         >>> data_dic = data.load_data()
-        >>> solver = 'gurobi'
+        >>> config = _config.Configuration();
         >>> problem_type = 'continuous'
         >>> L=None
-        >>> tree = nested_decomposition(tree_dic, data_dic, solver)
+        >>> tree = nested_decomposition(tree_dic, data_dic, config.solver)
     """
     # INICIO METODO
     #
@@ -40,7 +41,8 @@ def nd(tree, solver='gurobi', problem_type='continuous', L=None):
 
     LB = -float('inf')
     UB = -float('inf')
-    iteration = 0
+    iters = 0
+    evals = 0
 
     if problem_type == 'continuous':
         bin_cuts = False
@@ -55,18 +57,21 @@ def nd(tree, solver='gurobi', problem_type='continuous', L=None):
     first_stage_node = tree.first_stage_node_id()
     last_stage_nodes = tree.last_stage_nodes_id()
 
-    stopcontion = False
+    stopcontion = 0
 
-    while not stopcontion:
+    while (stopcontion == 0):
 
         for node_id in nodes_id:
             # --------------------
             # Iteration information
             # --------------------
             if node_id in first_stage_node:
-                iteration = iteration+1
+                iters = iters+1
+                time = timer() - config.start
+
                 _log.info("================================================")
-                _log.info("* ITERATION: " + str(iteration))
+                _log.info("* ITERATION: " + str(iters) + " | TIME: "
+                          + str(time) + " s")
                 _log.info("================================================")
                 _log.info('')
             # --------------------
@@ -118,8 +123,8 @@ def nd(tree, solver='gurobi', problem_type='continuous', L=None):
                 _log.debug("\t\t* Get duals")
                 get_duals = True
 
-            solution = problem.solve_node(solver, get_duals)
-
+            solution = problem.solve_node(config.solver, get_duals)
+            evals = evals + 1
             # --------------------
             # Update node solution
             # --------------------
@@ -129,7 +134,39 @@ def nd(tree, solver='gurobi', problem_type='continuous', L=None):
             _log.info('')
 
             # nodes_id = _queues.method1()
-        stopcontion = True
+        stopcontion = check_stopping_criteria(config, iters, evals)
 
     return tree
+# --------------------------------------------------------------------------- #
+
+# nd --------------------------------------------------------------------------
+def check_stopping_criteria(config, iters, evaluations):
+    """Check if the algorithm fulfilled with any stopping criteria option
+
+    Args:
+        stop (int): counter to identify the stop cause.
+        config (:obj:`configure`): configuration struct.
+    Return:
+    :obj:`int`: stopcontion.
+    """
+    stopcontion = 0
+    time = timer() - config.start
+
+    if time >= config.time:
+        stopcontion = 1
+        _log.info("================================================")
+        _log.info("* STOP METHOD: Maximum execution time achieved  ")
+        _log.info("================================================")
+    elif iters >= config.iters:
+        stopcontion = 2
+        _log.info("================================================")
+        _log.info("* STOP METHOD: Maximum iteration method achieved")
+        _log.info("================================================")
+    elif evaluations >= config.evals:
+        stopcontion = 3
+        _log.info("================================================")
+        _log.info("* STOP METHOD: Maximum number of evaluations")
+        _log.info("================================================")
+
+    return stopcontion
 # --------------------------------------------------------------------------- #

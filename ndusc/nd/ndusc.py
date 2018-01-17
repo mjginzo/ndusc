@@ -10,13 +10,13 @@ import ndusc.error.error as _error
 
 
 # ndusc -----------------------------------------------------------------------
-def ndusc(tree_dic, data_dic, solver='gurobi'):
+def ndusc(tree_dic, data_dic, config):
     """Nested decomposition algorithm with usc utilities.
 
     Args:
         tree_dic (:obj:`dict`): tree with node information.
         data_dic (:obj:`dict`): general data.
-        solver (:obj:`str`, opt): solver name. Defaults to ``'gurobi'``.
+        config (:obj:`Configure`): configuration file
 
     Return:
         :obj:`dict`: solution.
@@ -24,11 +24,12 @@ def ndusc(tree_dic, data_dic, solver='gurobi'):
     Example:
         >>> import ndusc.examples.input_module as im
         >>> import ndusc.nd.ndusc as ndusc
+        >>> import ndusc.nd.configuration as _config
         >>> data = im.input_module_example()
         >>> tree_dic = data.load_tree()
         >>> data_dic = data.load_data()
-        >>> solver = 'gurobi'
-        >>> tree = ndusc.ndusc(tree_dic, data_dic, solver)
+        >>> config = _config.Configure()
+        >>> tree = ndusc.ndusc(tree_dic, data_dic, config)
     """
     # Get tree
     tree = _tree.Tree(tree_dic, data_dic)
@@ -36,11 +37,11 @@ def ndusc(tree_dic, data_dic, solver='gurobi'):
     problem_type = tree.problem_type()
 
     if problem_type == 'continuous':
-        return _nd.nd(tree, solver='gurobi', problem_type=problem_type)
+        return _nd.nd(tree, config, problem_type=problem_type)
     else:
         _log.info('SOLVE RELAXATION')
-        cont_tree = _nd.nd(tree, solver='gurobi', problem_type='continuous')
+        cont_tree = _nd.nd(tree, config, problem_type='continuous')
         L = cont_tree.ev()
         _log.info('SOLVE BINARY PROBLEM')
-        return _nd.nd(tree, solver='gurobi', problem_type=problem_type, L=L)
+        return _nd.nd(tree, config, problem_type=problem_type, L=L)
 # --------------------------------------------------------------------------- #

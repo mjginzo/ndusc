@@ -12,7 +12,7 @@ import argparse as _arg
 import ndusc.logger.logger as _log
 import ndusc.input.input_module as _im
 import ndusc.nd.ndusc as _ndusc
-
+import ndusc.nd.configuration as _config
 
 # parse_args ------------------------------------------------------------------
 def parse_args():
@@ -23,7 +23,7 @@ def parse_args():
     # general parser and info
     parser = _arg.ArgumentParser(
         prog='ndusc',
-        description="""Nested decomposition algorithm. Implementation made by
+        description="""Nested decomposition algorithm.\n Implementation made by
         researchers of the Santiago de Compostela University.""",
         formatter_class=_arg.ArgumentDefaultsHelpFormatter
         )
@@ -48,6 +48,38 @@ def parse_args():
                         help="Write debug output.",
                         required=False
                         )
+
+    parser.add_argument("-t",
+                        "--time",
+                        help="Maximum execution time",
+                        default='100000',
+                        type=float,
+                        required=False
+                        )
+
+    parser.add_argument("-it",
+                        "--iterations",
+                        help="Maximum iterations",
+                        default='100000',
+                        type=float,
+                        required=False
+                        )
+
+    parser.add_argument("-ev",
+                        "--evaluations",
+                        help="Maximum evaluations",
+                        default='100000',
+                        type=float,
+                        required=False
+                        )
+
+    parser.add_argument("-o",
+                        "--output",
+                        action="store_true",
+                        help="Generate output files",
+                        required=False
+                        )
+
     args = parser.parse_args()
 
     return args
@@ -63,6 +95,7 @@ def main():
     Then, it executes the :func:`~umipkg.create_package.create_package`
     function.
     """
+
     # =========================================================================
     # Load input
     # -------------------------------------------------------------------------
@@ -70,8 +103,12 @@ def main():
 
     tree_path = args.tree
     data_path = args.data
-    solver = args.solver
-    debug = args.debug
+
+    # =========================================================================
+    # Create configuration struct
+    # -------------------------------------------------------------------------
+    config = _config.Configuration()
+    config.set_args_config(args)
 
     # =========================================================================
     # Logging format
@@ -84,7 +121,7 @@ def main():
     # -------------------------------------------------------------------------
 
     # create log with 'my_logger'
-    _log.log(debug)
+    _log.log(args.debug)
 
     # =========================================================================
     # Execute the function
@@ -96,5 +133,17 @@ def main():
     data_dic = data.load_data()
 
     # Nested decomposition
-    print(_ndusc.ndusc(tree_dic, data_dic, solver))
+    output = _ndusc.ndusc(tree_dic, data_dic, config)
+
+    print(output)
+
+
 # --------------------------------------------------------------------------- #
+
+# execute only if run as a script
+# An example of execution:
+# $ python3 ndusc -s gurobi -d
+#                       tests/datas/data1/tree.yaml tests/datas/data1/data.yaml
+if __name__ == '__main__':
+    # call to main module
+    main()
