@@ -224,7 +224,7 @@ class Tree(object):
 
     # get_node ----------------------------------------------------------------
     def get_node(self, id, copy=True):
-        """Retrun node object.
+        """Return node object.
 
         Args:
             id (:obj:`str` or :obj:`int`): node id.

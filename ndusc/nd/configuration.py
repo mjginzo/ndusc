@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Configuration module."""
-from timeit import default_timer as timer
 
 # Output_module ---------------------------------------------------------------
 class Configuration(object):
@@ -21,7 +20,6 @@ class Configuration(object):
         self.evals = 10000000
         self.debug_flag = False
         self.output_flag = False
-        self.start = timer()
 # ----------------------------------------------------------------------- #
 
 # set_args_config ------------------------------------------------------- #
